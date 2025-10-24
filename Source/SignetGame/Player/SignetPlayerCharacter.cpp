@@ -4,7 +4,10 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Components/InventoryComponent.h"
 #include "Components/SignetCameraComponent.h"
+#include "Components/StatsComponent.h"
+#include "Components/TargetingComponent.h"
 #include "Utility/AlsVector.h"
 
 
@@ -34,6 +37,11 @@ ASignetPlayerCharacter::ASignetPlayerCharacter()
 	CreateMeshObject(HandsMesh, TEXT("HandsMesh"), TEXT("Hands"));
 	CreateMeshObject(LegsMesh, TEXT("LegsMesh"), TEXT("Legs"));
 	CreateMeshObject(FeetMesh, TEXT("FeetMesh"), TEXT("Feet"));
+
+	// Initialize Gameplay Components
+	Stats = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComp"));
+	Targeting = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComp"));
+	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComp"));
 }
 
 void ASignetPlayerCharacter::NotifyControllerChanged()

@@ -12,6 +12,9 @@
 #define INPUT_PROPERTY(CategoryName) \
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=CategoryName, meta=(DisplayThumbnail=false))
 
+class UInventoryComponent;
+class UTargetingComponent;
+class UStatsComponent;
 class USignetCameraComponent;
 struct FInputActionValue;
 class UInputAction;
@@ -39,6 +42,25 @@ protected:
 // Begin Camera System
 
 	HIDDEN_PROPERTY() TObjectPtr<USignetCameraComponent> Camera;
+
+// Begin Components
+
+	HIDDEN_PROPERTY() TObjectPtr<UStatsComponent> Stats;
+	HIDDEN_PROPERTY() TObjectPtr<UTargetingComponent> Targeting;
+	HIDDEN_PROPERTY() TObjectPtr<UInventoryComponent> Inventory;
+
+public:
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UStatsComponent* GetStatsComponent() const { return Stats; }
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return Targeting; }
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UInventoryComponent* GetInventoryComponent() const { return Inventory; }
+
+protected:
 
 // Begin Player Input Schema
 
