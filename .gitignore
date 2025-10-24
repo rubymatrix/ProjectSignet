@@ -73,3 +73,13 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Ignore Plugins & Content
+Content/*
+Plugins/*
+
+# Ignore RubyMine/VS Code fiels
+.vs
+.vs/*
+.idea
+.idea/*

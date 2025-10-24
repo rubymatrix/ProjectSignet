@@ -1,0 +1,152 @@
+﻿// Copyright Red Lotus Games, All Rights Reserved.
+
+
+#include "SignetPlayerController.h"
+
+#include "SignetPlayerState.h"
+#include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "SignetGame/Core/SignetLobbyGameState.h"
+#include "SignetGame/Save/SignetSaveSubsystem.h"
+#include "SignetGame/UI/Admin/SGProfileDisplayWidget.h"
+#include "SignetGame/UI/Admin/SGProfileEditorWidget.h"
+#include "SignetGame/Util/Logging.h"
+
+ASignetPlayerController::ASignetPlayerController()
+{
+	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetBPClass(
+		TEXT("/Game/Signet/UI/Admin/WBP_SGAdmin")
+	);
+
+	if (WidgetBPClass.Succeeded())
+	{
+		AdminPanelWidgetClass = WidgetBPClass.Class;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to find WBP_SGProfileEditor class at the given path."));
+	}
+}
+
+void ASignetPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsLocalController())
+	{
+		InitializeAdminUI();
+		SetInputMode(FInputModeGameAndUI());
+		bShowMouseCursor = true;
+	}
+}
+
+
+void ASignetPlayerController::ClientRequestProfileSnapshot_Implementation()
+{
+	// Build from the local save subsystem
+	if (auto* GI = GetGameInstance())
+	{
+		if (auto* Save = GI->GetSubsystem<USignetSaveSubsystem>())
+		{
+			const auto& P = Save->GetPlayerProfile();
+			FSignetProfileSnapshot S;
+			S.PlayerName = Save->GetPlayerName();
+			S.Nation     = P.HomeNation;
+			S.Race       = P.SelectedRace;
+			S.Face       = P.SelectedFace;
+			S.Job        = P.CurrentJob;
+			S.Level      = Save->GetCurrentJobLevel();
+			S.CurrentExp = Save->GetCurrentJobExp();
+			ServerSubmitProfileSnapshot(S);
+		}
+	}
+}
+
+static bool IsEnumValid(ENation) { return true; }
+void ASignetPlayerController::ServerSubmitProfileSnapshot_Implementation(const FSignetProfileSnapshot Snapshot)
+{
+	auto* PS = GetPlayerState<ASignetPlayerState>();
+	if (!PS) return;
+
+	const FString SanitizedName = Snapshot.PlayerName.Left(50);
+
+	UE_LOG(LogSignetNet, Log, TEXT("Received New Client Profile Snapshot from %s"), *SanitizedName);
+
+	PS->PlayerName = SanitizedName; // Local
+	PS->SetPlayerName(SanitizedName); // Engine-level
+	PS->Nation = Snapshot.Nation;
+	PS->Race = Snapshot.Race;
+	PS->Face = Snapshot.Face;
+	PS->Job = Snapshot.Job;
+	PS->Level = Snapshot.Level;
+	PS->CurrentExp = Snapshot.CurrentExp;
+	PS->ReceivedPlayerProfile();
+}
+
+void ASignetPlayerController::ServerDebugLogConnections_Implementation()
+{
+	if (auto* GS = GetWorld()->GetGameState<ASignetLobbyGameState>())
+	{
+		for (auto LobbyPlayer : GS->GetLobbyPlayers())
+		{
+			UE_LOG(LogSignet, Log, TEXT("Player: %s - Lv %i %s"), *LobbyPlayer->PlayerName, LobbyPlayer->Level, *UEnum::GetValueAsString(LobbyPlayer->Job));
+		}
+	}
+}
+
+void ASignetPlayerController::InitializeAdminUI()
+{
+	if (AdminPanelWidgetClass)
+	{
+		if (AdminPanelWidget = CreateWidget<UUserWidget>(this, AdminPanelWidgetClass); AdminPanelWidget)
+		{
+			const auto GameInstance = GetGameInstance();
+			if (!GameInstance) return;
+
+			const auto SaveSystem = GameInstance->GetSubsystem<USignetSaveSubsystem>();
+			if (!SaveSystem) return;
+
+			ProfileEditorWidget = Cast<USGProfileEditorWidget>(AdminPanelWidget->GetWidgetFromName(FName(TEXT("ProfileEditor"))));
+			ProfileDisplayWidget = Cast<USGProfileDisplayWidget>(AdminPanelWidget->GetWidgetFromName(FName(TEXT("ProfileDisplay"))));
+
+			if (ProfileEditorWidget)
+			{
+				ProfileEditorWidget->InitializeFromData(SaveSystem->GetSave());
+				ProfileEditorWidget->OnProfileSaved.AddDynamic(this, &ASignetPlayerController::OnProfileSaved);
+				ProfileEditorWidget->OnCurrencyAdded.AddDynamic(this, &ASignetPlayerController::OnCurrencyAdded);
+			}
+
+			if (ProfileDisplayWidget)
+			{
+				ProfileDisplayWidget->SetDataFromSave();
+			}
+
+			AdminPanelWidget->AddToViewport();
+		}
+		else
+		{
+			UE_LOG(LogSignet, Warning, TEXT("ASignetPlayerController::BeginPlay: Failed to create ProfileEditorWidget."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSignet, Warning, TEXT("ASignetPlayerController::BeginPlay: ProfileEditorWidgetClass is null."));
+	}
+}
+
+void ASignetPlayerController::OnProfileSaved(const FSignetPlayerProfile& Profile)
+{
+	if (ProfileDisplayWidget)
+	{
+		ProfileDisplayWidget->SetDataFromSave();
+	}
+}
+
+void ASignetPlayerController::OnCurrencyAdded(const FCurrencyAdjustment& Data)
+{
+	if (ProfileDisplayWidget)
+	{
+		ProfileDisplayWidget->SetDataFromSave();
+	}
+}
+
