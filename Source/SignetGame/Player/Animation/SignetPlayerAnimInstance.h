@@ -13,7 +13,7 @@ class ASignetPlayerCharacter;
 /**
  * Custom ALS Animation instance, much simplified
  */
-UCLASS(ClassGroup=(Signet), AutoExpandCategories=("Config", "Config|Modular Animations"))
+UCLASS(ClassGroup=(Signet), AutoExpandCategories=("Config", "Config|Modular AnimData"))
 class SIGNETGAME_API USignetPlayerAnimInstance : public UAlsAnimationInstance
 {
 	GENERATED_BODY()
@@ -44,11 +44,11 @@ public:
 	
 // Begin Animation Setting References
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
-	FModularAnimData Animations;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular AnimData")
+	FModularAnimData AnimData;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular AnimData")
 	TMap<FGameplayTag, FLayeredSequence> CastingAnims;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular AnimData")
 	TMap<FGameplayTag, FWeaponOverlay> WeaponOverlayAnims;
 	
 	USignetPlayerAnimInstance();

@@ -22,9 +22,9 @@ struct SIGNETGAME_API FLayeredSequence
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Lower;
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Upper;
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Waist;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TObjectPtr<UAnimSequence> Lower;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TObjectPtr<UAnimSequence> Upper;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TObjectPtr<UAnimSequence> Waist;
 };
 
 USTRUCT(BlueprintType)
@@ -32,13 +32,13 @@ struct SIGNETGAME_API FWeaponOverlay
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State")
 	FLayeredSequence Idle;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State")
 	FLayeredSequence Dead;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Walking;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Running;
 };
 
@@ -47,25 +47,25 @@ struct SIGNETGAME_API FModularAnimData
 {
 	GENERATED_BODY()
 
-// Begin Core State Animations
+// Begin Core State AnimData
 	
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Idle;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Engaged;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Dead;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Walking;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Running;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Resting;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Sitting;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Crafting;
-	UPROPERTY(EditDefaultsOnly, Category = "State")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Falling;
 	
 };

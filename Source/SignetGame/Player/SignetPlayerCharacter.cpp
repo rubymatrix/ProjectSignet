@@ -10,33 +10,36 @@
 #include "Utility/AlsVector.h"
 #include "Net/UnrealNetwork.h"
 
-
-ASignetPlayerCharacter::ASignetPlayerCharacter()
+ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	// Initialize the camera system
 	Camera = CreateDefaultSubobject<USignetCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(GetMesh());
 	Camera->SetRelativeLocation_Direct({0.f, 90.f, 0.f});
 	
-	auto CreateMeshObject = [&](TObjectPtr<USkeletalMeshComponent> MeshComp, FName InName, FName Tag)
+	auto CreateMeshObject = [&](FName InName, FName Tag)
 	{
-		MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(InName);
+		auto MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(InName); 
+
 		MeshComp->SetupAttachment(GetMesh());
 		MeshComp->SetVisibility(false);
-		MeshComp->SetComponentTickEnabled(false);
+		MeshComp->SetLeaderPoseComponent(GetMesh(), true);
+		MeshComp->SetBoundsScale(5.f);
 		MeshComp->ComponentTags.Add(Tag);
+
+		return MeshComp;
 	};
 
 	// Initialize all module mesh parts
-	CreateMeshObject(MainMesh, TEXT("MainMesh"), TEXT("Main"));
-	CreateMeshObject(SubMesh, TEXT("SubMesh"), TEXT("Sub"));
-	CreateMeshObject(RangedMesh, TEXT("RangedMesh"), TEXT("Ranged"));
-	CreateMeshObject(FaceMesh, TEXT("FaceMesh"), TEXT("Face"));
-	CreateMeshObject(HeadMesh, TEXT("HeadMesh"), TEXT("Head"));
-	CreateMeshObject(BodyMesh, TEXT("BodyMesh"), TEXT("Body"));
-	CreateMeshObject(HandsMesh, TEXT("HandsMesh"), TEXT("Hands"));
-	CreateMeshObject(LegsMesh, TEXT("LegsMesh"), TEXT("Legs"));
-	CreateMeshObject(FeetMesh, TEXT("FeetMesh"), TEXT("Feet"));
+	MainMesh = CreateMeshObject(TEXT("MainMesh"), TEXT("Main"));
+	SubMesh = CreateMeshObject(TEXT("SubMesh"), TEXT("Sub"));
+	RangedMesh = CreateMeshObject(TEXT("RangedMesh"), TEXT("Ranged"));
+	FaceMesh = CreateMeshObject(TEXT("FaceMesh"), TEXT("Face"));
+	HeadMesh = CreateMeshObject(TEXT("HeadMesh"), TEXT("Head"));
+	BodyMesh = CreateMeshObject(TEXT("BodyMesh"), TEXT("Body"));
+	HandsMesh = CreateMeshObject(TEXT("HandsMesh"), TEXT("Hands"));
+	LegsMesh = CreateMeshObject(TEXT("LegsMesh"), TEXT("Legs"));
+	FeetMesh = CreateMeshObject(TEXT("FeetMesh"), TEXT("Feet"));
 
 	// Initialize Gameplay Components
 	Stats = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComp"));

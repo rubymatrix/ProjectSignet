@@ -104,7 +104,7 @@ FLayeredSequence USignetPlayerAnimInstance::GetCurrentState() const
 		StateTag == FTagCache::Get().State.Stunned ||
 		StateTag == FTagCache::Get().State.Idle)
 	{
-		return Animations.Idle;
+		return AnimData.Idle;
 	}
 
 	if (StateTag == FTagCache::Get().State.Engaged)
@@ -114,7 +114,7 @@ FLayeredSequence USignetPlayerAnimInstance::GetCurrentState() const
 
 	if (StateTag == FTagCache::Get().State.Dead)
 	{
-		return Animations.Dead;
+		return AnimData.Dead;
 	}
 
 	if (StateTag == FTagCache::Get().State.Casting)
@@ -124,38 +124,38 @@ FLayeredSequence USignetPlayerAnimInstance::GetCurrentState() const
 
 	if (StateTag == FTagCache::Get().State.Sitting)
 	{
-		return Animations.Sitting;
+		return AnimData.Sitting;
 	}
 
 	if (StateTag == FTagCache::Get().State.Resting)
 	{
-		return Animations.Resting;
+		return AnimData.Resting;
 	}
 
 	if (StateTag == FTagCache::Get().State.Crafting)
 	{
-		return Animations.Crafting;
+		return AnimData.Crafting;
 	}
 
-	return Animations.Idle;
+	return AnimData.Idle;
 }
 
 FLayeredSequence USignetPlayerAnimInstance::GetCurrentWalkAnim() const
 {
 	if (StateTag == FTagCache::Get().State.Engaged) return GetCurrentWeaponData().Walking;
-	return Animations.Walking;
+	return AnimData.Walking;
 }
 
 FLayeredSequence USignetPlayerAnimInstance::GetCurrentRunAnim() const
 {
 	if (StateTag == FTagCache::Get().State.Engaged) return GetCurrentWeaponData().Running;
-	return Animations.Running;
+	return AnimData.Running;
 }
 
 FLayeredSequence USignetPlayerAnimInstance::GetCurrentIdleAnim() const
 {
 	if (StateTag == FTagCache::Get().State.Engaged) return GetCurrentWeaponData().Idle;
-	return Animations.Idle;
+	return AnimData.Idle;
 }
 
 void USignetPlayerAnimInstance::DetermineStateTag()

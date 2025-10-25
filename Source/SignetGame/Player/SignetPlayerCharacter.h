@@ -8,9 +8,6 @@
 #include "VisualState.h"
 #include "SignetPlayerCharacter.generated.h"
 
-#define HIDDEN_PROPERTY() UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true))
-#define INPUT_PROPERTY(CategoryName) \
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=CategoryName, meta=(DisplayThumbnail=false))
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
 
@@ -39,25 +36,38 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_VisualState)
 	FVisualState VisualState;
 	
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> MainMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> SubMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> RangedMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> FaceMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> HeadMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> BodyMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> HandsMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> LegsMesh;
-	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> FeetMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> MainMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> SubMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> RangedMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> FaceMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> HeadMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> BodyMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> HandsMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> LegsMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USkeletalMeshComponent> FeetMesh;
 
 // Begin Camera System
 
-	HIDDEN_PROPERTY() TObjectPtr<USignetCameraComponent> Camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<USignetCameraComponent> Camera;
 
 // Begin Components
 
-	HIDDEN_PROPERTY() TObjectPtr<UStatsComponent> Stats;
-	HIDDEN_PROPERTY() TObjectPtr<UTargetingComponent> Targeting;
-	HIDDEN_PROPERTY() TObjectPtr<UInventoryComponent> Inventory;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UStatsComponent> Stats;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UTargetingComponent> Targeting;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UInventoryComponent> Inventory;
 
 public:
 
@@ -73,58 +83,58 @@ public:
 protected:
 
 // Begin Player Input Schema
-
-	INPUT_PROPERTY("Settings|Input")
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 	
-	INPUT_PROPERTY("Settings|Input|Bindings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> LookMouseAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> LookAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> MoveAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> ToggleRunWalkAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> JumpAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> SitAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") // Doubles as the Target Lock action 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")// Doubles as the Target Lock action 
 	TObjectPtr<UInputAction> HealAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> EmoteAction;
 	
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> AcceptAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> CancelAction;
 
-	INPUT_PROPERTY("Settings|Input|Bindings") 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> MenuAction;
 
-	INPUT_PROPERTY("Settings|Input|Options")
-	float LookUpMouseSensitivity{1.0f};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
+	float LookUpMouseSensitivity{-1.0f};
 
-	INPUT_PROPERTY("Settings|Input|Options")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
 	float LookRightMouseSensitivity{1.0f};
 
-	INPUT_PROPERTY("Settings|Input|Options")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
 	float LookUpRate{90.f};
 
-	INPUT_PROPERTY("Settings|Input|Options")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
 	float LookRightRate{90.f};
 	
 public:
-
-	ASignetPlayerCharacter();
+	
+	ASignetPlayerCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void NotifyControllerChanged() override;
 
@@ -170,5 +180,3 @@ public:
 	virtual void DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DisplayInfo, float& Unused, float& VerticalLocation) override;
 };
 
-#undef HIDDEN_PROPERTY
-#undef INPUT_PROPERTY

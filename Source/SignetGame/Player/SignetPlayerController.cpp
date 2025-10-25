@@ -35,8 +35,8 @@ void ASignetPlayerController::BeginPlay()
 	if (IsLocalController())
 	{
 		InitializeAdminUI();
-		SetInputMode(FInputModeGameAndUI());
-		bShowMouseCursor = true;
+		// SetInputMode(FInputModeGameAndUI());
+		// bShowMouseCursor = true;
 	}
 }
 

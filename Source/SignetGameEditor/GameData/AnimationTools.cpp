@@ -73,27 +73,27 @@ void UAnimationTools::AssignBasicAnimations(USignetPlayerAnimInstance* AnimInsta
 		return Cast<UAnimSequence>(StaticLoadObject(UAnimSequence::StaticClass(), nullptr, *Path)); 	
 	};
 
-	AnimInstance->Animations.Idle.Lower = LoadAnim(FString::Printf(TEXT("%s/idl0.idl0"), *BasicAnimPath));
-	AnimInstance->Animations.Idle.Upper = LoadAnim(FString::Printf(TEXT("%s/idl1.idl1"), *BasicAnimPath));
-	AnimInstance->Animations.Idle.Waist = LoadAnim(FString::Printf(TEXT("%s/idl2.idl2"), *BasicAnimPath));
-	AnimInstance->Animations.Walking.Lower = LoadAnim(FString::Printf(TEXT("%s/wlk0.wlk0"), *BasicAnimPath));
-	AnimInstance->Animations.Walking.Upper = LoadAnim(FString::Printf(TEXT("%s/wlk1.wlk1"), *BasicAnimPath));
-	AnimInstance->Animations.Walking.Waist = LoadAnim(FString::Printf(TEXT("%s/wlk2.wlk2"), *BasicAnimPath));
-	AnimInstance->Animations.Running.Lower = LoadAnim(FString::Printf(TEXT("%s/run0.run0"), *BasicAnimPath));
-	AnimInstance->Animations.Running.Upper = LoadAnim(FString::Printf(TEXT("%s/run1.run1"), *BasicAnimPath));
-	AnimInstance->Animations.Running.Waist = LoadAnim(FString::Printf(TEXT("%s/run2.run2"), *BasicAnimPath));
-	AnimInstance->Animations.Dead.Lower = LoadAnim(FString::Printf(TEXT("%s/cor0.cor0"), *BasicAnimPath));
-	AnimInstance->Animations.Dead.Upper = LoadAnim(FString::Printf(TEXT("%s/cor1.cor1"), *BasicAnimPath));
-	AnimInstance->Animations.Dead.Waist = LoadAnim(FString::Printf(TEXT("%s/cor2.cor2"), *BasicAnimPath));
-	AnimInstance->Animations.Crafting.Lower = LoadAnim(FString::Printf(TEXT("%s/ri00.ri00"), *BasicAnimPath));
-	AnimInstance->Animations.Crafting.Upper = LoadAnim(FString::Printf(TEXT("%s/ri01.ri01"), *BasicAnimPath));
-	AnimInstance->Animations.Crafting.Waist = LoadAnim(FString::Printf(TEXT("%s/ri02.ri02"), *BasicAnimPath));
-	AnimInstance->Animations.Resting.Lower = LoadAnim(FString::Printf(TEXT("%s/rx10.rx10"), *BasicAnimPath));
-	AnimInstance->Animations.Resting.Upper = LoadAnim(FString::Printf(TEXT("%s/rx11.rx11"), *BasicAnimPath));
-	AnimInstance->Animations.Resting.Waist = LoadAnim(FString::Printf(TEXT("%s/rx12.rx12"), *BasicAnimPath));
-	AnimInstance->Animations.Sitting.Lower = LoadAnim(FString::Printf(TEXT("%s/si10.si10"), *BasicAnimPath));
-	AnimInstance->Animations.Sitting.Upper = LoadAnim(FString::Printf(TEXT("%s/si11.si11"), *BasicAnimPath));
-	AnimInstance->Animations.Sitting.Waist = LoadAnim(FString::Printf(TEXT("%s/si12.si12"), *BasicAnimPath));
+	AnimInstance->AnimData.Idle.Lower = LoadAnim(FString::Printf(TEXT("%s/idl0.idl0"), *BasicAnimPath));
+	AnimInstance->AnimData.Idle.Upper = LoadAnim(FString::Printf(TEXT("%s/idl1.idl1"), *BasicAnimPath));
+	AnimInstance->AnimData.Idle.Waist = LoadAnim(FString::Printf(TEXT("%s/idl2.idl2"), *BasicAnimPath));
+	AnimInstance->AnimData.Walking.Lower = LoadAnim(FString::Printf(TEXT("%s/wlk0.wlk0"), *BasicAnimPath));
+	AnimInstance->AnimData.Walking.Upper = LoadAnim(FString::Printf(TEXT("%s/wlk1.wlk1"), *BasicAnimPath));
+	AnimInstance->AnimData.Walking.Waist = LoadAnim(FString::Printf(TEXT("%s/wlk2.wlk2"), *BasicAnimPath));
+	AnimInstance->AnimData.Running.Lower = LoadAnim(FString::Printf(TEXT("%s/run0.run0"), *BasicAnimPath));
+	AnimInstance->AnimData.Running.Upper = LoadAnim(FString::Printf(TEXT("%s/run1.run1"), *BasicAnimPath));
+	AnimInstance->AnimData.Running.Waist = LoadAnim(FString::Printf(TEXT("%s/run2.run2"), *BasicAnimPath));
+	AnimInstance->AnimData.Dead.Lower = LoadAnim(FString::Printf(TEXT("%s/cor0.cor0"), *BasicAnimPath));
+	AnimInstance->AnimData.Dead.Upper = LoadAnim(FString::Printf(TEXT("%s/cor1.cor1"), *BasicAnimPath));
+	AnimInstance->AnimData.Dead.Waist = LoadAnim(FString::Printf(TEXT("%s/cor2.cor2"), *BasicAnimPath));
+	AnimInstance->AnimData.Crafting.Lower = LoadAnim(FString::Printf(TEXT("%s/ri00.ri00"), *BasicAnimPath));
+	AnimInstance->AnimData.Crafting.Upper = LoadAnim(FString::Printf(TEXT("%s/ri01.ri01"), *BasicAnimPath));
+	AnimInstance->AnimData.Crafting.Waist = LoadAnim(FString::Printf(TEXT("%s/ri02.ri02"), *BasicAnimPath));
+	AnimInstance->AnimData.Resting.Lower = LoadAnim(FString::Printf(TEXT("%s/rx10.rx10"), *BasicAnimPath));
+	AnimInstance->AnimData.Resting.Upper = LoadAnim(FString::Printf(TEXT("%s/rx11.rx11"), *BasicAnimPath));
+	AnimInstance->AnimData.Resting.Waist = LoadAnim(FString::Printf(TEXT("%s/rx12.rx12"), *BasicAnimPath));
+	AnimInstance->AnimData.Sitting.Lower = LoadAnim(FString::Printf(TEXT("%s/si10.si10"), *BasicAnimPath));
+	AnimInstance->AnimData.Sitting.Upper = LoadAnim(FString::Printf(TEXT("%s/si11.si11"), *BasicAnimPath));
+	AnimInstance->AnimData.Sitting.Waist = LoadAnim(FString::Printf(TEXT("%s/si12.si12"), *BasicAnimPath));
 }
 
 void UAnimationTools::AssignCastingScheduleAnimations(USignetPlayerAnimInstance* AnimInstance,
@@ -222,9 +222,9 @@ void UAnimationTools::AssignAnimationsByWeaponType(USignetPlayerAnimInstance* An
 	// Assign the base engaged anims for no weapon type
 	if (WeaponType == FTagCache::Get().Skill.None)
 	{
-		AnimInstance->Animations.Engaged.Lower = LoadAnim(AnimMap["btl"][0]);
-		AnimInstance->Animations.Engaged.Upper = LoadAnim(AnimMap["btl"][1]);
-		AnimInstance->Animations.Engaged.Waist = LoadAnim(AnimMap["btl"][2]);
+		AnimInstance->AnimData.Engaged.Lower = LoadAnim(AnimMap["btl"][0]);
+		AnimInstance->AnimData.Engaged.Upper = LoadAnim(AnimMap["btl"][1]);
+		AnimInstance->AnimData.Engaged.Waist = LoadAnim(AnimMap["btl"][2]);
 	}
 	
 	if (AnimInstance->WeaponOverlayAnims.Find(WeaponType))
