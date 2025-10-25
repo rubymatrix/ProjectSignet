@@ -8,7 +8,12 @@
 			"Name": "SignetGame",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		}
+		},
+        {
+            "Name": "SignetGameEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        }
 	],
 	"Plugins": [
 		{

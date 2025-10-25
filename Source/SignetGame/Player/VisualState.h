@@ -12,10 +12,10 @@ struct SIGNETGAME_API FVisualState
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ERace Race;
+	ERace Race = ERace::HumeMale;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	EFace Face;
+	EFace Face = EFace::F1A;
 
 	UPROPERTY(VisibleAnywhere) uint16 MainID = 0;
 	UPROPERTY(VisibleAnywhere) uint16 SubID = 0;

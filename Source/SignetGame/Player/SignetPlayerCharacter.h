@@ -157,6 +157,7 @@ protected:
 
 // Begin Replication Functions
 
+	UFUNCTION()
 	void OnRep_VisualState();
 
 public:
