@@ -90,8 +90,6 @@ void ASignetPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInput->BindAction(ToggleRunWalkAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnToggleRunWalk);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnJump);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Canceled, this, &ThisClass::Input_OnJump);
-
-		
 	}
 }
 

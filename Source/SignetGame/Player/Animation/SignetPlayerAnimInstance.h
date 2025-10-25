@@ -8,8 +8,6 @@
 #include "ModularAnimData.h"
 #include "SignetPlayerAnimInstance.generated.h"
 
-#define STATE_PROPERTY() UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
-#define ANIM_PROPERTY() UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
 
 class ASignetPlayerCharacter;
 /**
@@ -20,7 +18,6 @@ class SIGNETGAME_API USignetPlayerAnimInstance : public UAlsAnimationInstance
 {
 	GENERATED_BODY()
 
-	
 public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
@@ -28,23 +25,32 @@ public:
 
 // Gameplay Tag Caches
 
-	STATE_PROPERTY() FGameplayTag MainWeaponSkillTag;
-	STATE_PROPERTY() FGameplayTag SubWeaponSkillTag;
-	STATE_PROPERTY() FGameplayTag RangedWeaponSkillTag;
-	STATE_PROPERTY() FGameplayTag StateTag;
-	STATE_PROPERTY() FGameplayTag CastingTag;
-	STATE_PROPERTY() FGameplayTag GaitTag;
-	STATE_PROPERTY() FGameplayTag RotationModeTag;
-	STATE_PROPERTY() FGameplayTag MoveDirectionTag;
-	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag MainWeaponSkillTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag SubWeaponSkillTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag RangedWeaponSkillTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag StateTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag CastingTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag GaitTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag RotationModeTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
+	FGameplayTag MoveDirectionTag;
 	
 // Begin Animation Setting References
 	
-	ANIM_PROPERTY() FModularAnimData Animations;
-	ANIM_PROPERTY() TMap<FGameplayTag, FLayeredSequence> CastingAnims;
-	ANIM_PROPERTY() TMap<FGameplayTag, FWeaponOverlay> WeaponOverlayAnims;
-
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
+	FModularAnimData Animations;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
+	TMap<FGameplayTag, FLayeredSequence> CastingAnims;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Modular Animations")
+	TMap<FGameplayTag, FWeaponOverlay> WeaponOverlayAnims;
+	
 	USignetPlayerAnimInstance();
 
 	virtual void NativeInitializeAnimation() override;
@@ -89,6 +95,3 @@ private:
 	FGameplayTag DetermineDirectionTag();
 	
 };
-
-#undef STATE_PROPERTY
-#undef ANIM_PROPERTY

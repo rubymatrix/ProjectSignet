@@ -7,6 +7,7 @@
 #include "Tags/AbilityTags.h"
 #include "Tags/DataTags.h"
 #include "Tags/MoveDirections.h"
+#include "Tags/RaceTags.h"
 
 struct FTagCache
 {
@@ -17,6 +18,7 @@ struct FTagCache
 	FAbilityTags Ability;
 	FDataTags Data;
 	FMoveDirectionTags Movement;
+	FRaceTags Race;
 	
 	static const FTagCache& Get()
 	{
@@ -32,6 +34,7 @@ struct FTagCache
 			Instance.Ability.Initialize();
 			Instance.Data.Initialize();
 			Instance.Movement.Initialize();
+			Instance.Race.Initialize();
 			bInitialized = true;
 		}
 		

@@ -24,7 +24,7 @@ struct SIGNETGAME_API FLayeredSequence
 
 	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Lower;
 	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Upper;
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Right;
+	UPROPERTY(EditDefaultsOnly) TObjectPtr<UAnimSequence> Waist;
 };
 
 USTRUCT(BlueprintType)
@@ -51,6 +51,8 @@ struct SIGNETGAME_API FModularAnimData
 	
 	UPROPERTY(EditDefaultsOnly, Category = "State")
 	FLayeredSequence Idle;
+	UPROPERTY(EditDefaultsOnly, Category = "State")
+	FLayeredSequence Engaged;
 	UPROPERTY(EditDefaultsOnly, Category = "State")
 	FLayeredSequence Dead;
 	UPROPERTY(EditDefaultsOnly, Category = "State")

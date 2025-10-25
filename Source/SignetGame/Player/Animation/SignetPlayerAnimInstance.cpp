@@ -99,20 +99,45 @@ FWeaponOverlay USignetPlayerAnimInstance::GetCurrentWeaponData() const
 
 FLayeredSequence USignetPlayerAnimInstance::GetCurrentState() const
 {
-	switch (StateTag)
+	if (StateTag == FGameplayTag::EmptyTag ||
+		StateTag == FTagCache::Get().State.Cutscene ||
+		StateTag == FTagCache::Get().State.Stunned ||
+		StateTag == FTagCache::Get().State.Idle)
 	{
-	case FGameplayTag::EmptyTag:
-	case FTagCache::Get().State.Cutscene:
-	case FTagCache::Get().State.Stunned:
-	case FTagCache::Get().State.Idle: return Animations.Idle;
-	case FTagCache::Get().State.Engaged: return GetCurrentWeaponData().Idle;
-	case FTagCache::Get().State.Dead: return Animations.Dead;
-	case FTagCache::Get().State.Casting: return GetCurrentCastingSchedule();
-	case FTagCache::Get().State.Sitting: return Animations.Sitting;
-	case FTagCache::Get().State.Resting: return Animations.Resting;
-	case FTagCache::Get().State.Crafting: return Animations.Crafting;
-	default: return Animations.Idle;
+		return Animations.Idle;
 	}
+
+	if (StateTag == FTagCache::Get().State.Engaged)
+	{
+		return GetCurrentWeaponData().Idle;
+	}
+
+	if (StateTag == FTagCache::Get().State.Dead)
+	{
+		return Animations.Dead;
+	}
+
+	if (StateTag == FTagCache::Get().State.Casting)
+	{
+		return GetCurrentCastingSchedule();
+	}
+
+	if (StateTag == FTagCache::Get().State.Sitting)
+	{
+		return Animations.Sitting;
+	}
+
+	if (StateTag == FTagCache::Get().State.Resting)
+	{
+		return Animations.Resting;
+	}
+
+	if (StateTag == FTagCache::Get().State.Crafting)
+	{
+		return Animations.Crafting;
+	}
+
+	return Animations.Idle;
 }
 
 FLayeredSequence USignetPlayerAnimInstance::GetCurrentWalkAnim() const
