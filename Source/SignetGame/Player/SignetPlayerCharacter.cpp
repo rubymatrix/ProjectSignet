@@ -1,7 +1,6 @@
 ﻿// Copyright Red Lotus Games, All Rights Reserved.
 
 #include "SignetPlayerCharacter.h"
-
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/InventoryComponent.h"
@@ -9,6 +8,7 @@
 #include "Components/StatsComponent.h"
 #include "Components/TargetingComponent.h"
 #include "Utility/AlsVector.h"
+#include "Net/UnrealNetwork.h"
 
 
 ASignetPlayerCharacter::ASignetPlayerCharacter()
@@ -106,6 +106,11 @@ void ASignetPlayerCharacter::CalcCamera(float DeltaTime, struct FMinimalViewInfo
 	Super::CalcCamera(DeltaTime, OutResult);
 }
 
+void ASignetPlayerCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+}
+
 void ASignetPlayerCharacter::Input_OnLookMouse(const FInputActionValue& ActionValue)
 {
 	const auto Value = ActionValue.Get<FVector2D>();
@@ -186,8 +191,20 @@ void ASignetPlayerCharacter::Input_OnMenu(const FInputActionValue& ActionValue)
 {
 }
 
+void ASignetPlayerCharacter::OnRep_VisualState()
+{
+	VisualStateUpdated.Broadcast(VisualState);
+}
+
+void ASignetPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASignetPlayerCharacter, VisualState);
+}
+
 void ASignetPlayerCharacter::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DisplayInfo, float& Unused,
-	float& VerticalLocation)
+                                          float& VerticalLocation)
 {
 	if (Camera->IsActive())
 	{

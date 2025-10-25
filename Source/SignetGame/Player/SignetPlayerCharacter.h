@@ -5,20 +5,23 @@
 #include "CoreMinimal.h"
 #include "AlsCharacter.h"
 #include "InputActionValue.h"
+#include "VisualState.h"
 #include "SignetPlayerCharacter.generated.h"
-
 
 #define HIDDEN_PROPERTY() UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true))
 #define INPUT_PROPERTY(CategoryName) \
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=CategoryName, meta=(DisplayThumbnail=false))
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
+
 class UInventoryComponent;
 class UTargetingComponent;
 class UStatsComponent;
 class USignetCameraComponent;
-struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
+
+struct FInputActionValue;
 
 UCLASS()
 class SIGNETGAME_API ASignetPlayerCharacter : public AAlsCharacter
@@ -26,8 +29,15 @@ class SIGNETGAME_API ASignetPlayerCharacter : public AAlsCharacter
 	GENERATED_BODY()
 
 // Begin Visual Mesh Systems
-protected:
+public:
 
+	UPROPERTY(BlueprintAssignable)
+	FOnVisualStateUpdated VisualStateUpdated;
+	
+protected:
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_VisualState)
+	FVisualState VisualState;
 	
 	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> MainMesh;
 	HIDDEN_PROPERTY() TObjectPtr<USkeletalMeshComponent> SubMesh;
@@ -126,7 +136,11 @@ protected:
 
 	virtual void CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult) override;
 
+	virtual void PostInitializeComponents() override;
+
+	
 // Begin Input Action Handlers
+	
 	virtual void Input_OnLookMouse(const FInputActionValue& ActionValue);
 	virtual void Input_OnLook(const FInputActionValue& ActionValue);
 	virtual void Input_OnMove(const FInputActionValue& ActionValue);
@@ -140,8 +154,18 @@ protected:
 	virtual void Input_OnCancel(const FInputActionValue& ActionValue);
 	virtual void Input_OnMenu(const FInputActionValue& ActionValue);
 
-// Begin Debug Display
+
+// Begin Replication Functions
+
+	void OnRep_VisualState();
+
 public:
+
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	
+
+// Begin Debug Display
+	
 	virtual void DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DisplayInfo, float& Unused, float& VerticalLocation) override;
 };
 
