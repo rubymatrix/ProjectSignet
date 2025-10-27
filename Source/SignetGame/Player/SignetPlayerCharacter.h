@@ -137,12 +137,30 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
 	float LookRightRate{90.f};
+
+
+// Begin Stats System
+
+	UPROPERTY()
+	FActiveGameplayEffectHandle BaseStatsEffectHandle;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Gameplay")
+	TSubclassOf<UGameplayEffect> BaseStatsEffectClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Gameplay")
+	TSubclassOf<UGameplayEffect> HealEffectClass;
 	
 public:
 	
 	ASignetPlayerCharacter(const FObjectInitializer& ObjectInitializer);
 
 	virtual void NotifyControllerChanged() override;
+
+	UFUNCTION(Server, Reliable)
+	void ResetBaseStats();
+
+	UFUNCTION(Server, Reliable)
+	void Heal();
 
 protected:
 	

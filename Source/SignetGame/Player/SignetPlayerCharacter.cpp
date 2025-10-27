@@ -3,6 +3,7 @@
 #include "SignetPlayerCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "SignetPlayerState.h"
 #include "Components/InventoryComponent.h"
 #include "Components/SignetCameraComponent.h"
 #include "Components/StatsComponent.h"
@@ -10,6 +11,10 @@
 #include "Utility/AlsVector.h"
 #include "Net/UnrealNetwork.h"
 #include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
+#include "SignetGame/Abilities/TagCache.h"
+#include "SignetGame/Abilities/Attributes/SignetPrimaryAttributeSet.h"
+#include "SignetGame/Util/Logging.h"
+#include "SignetGame/Util/Stats.h"
 
 bool ASignetPlayerCharacter::IsAscValid() const
 {
@@ -82,6 +87,91 @@ void ASignetPlayerCharacter::NotifyControllerChanged()
 	}
 	
 	Super::NotifyControllerChanged();
+}
+
+void ASignetPlayerCharacter::ResetBaseStats_Implementation()
+{
+	const auto Asc = Cast<USignetAbilitySystemComponent>(GetAbilitySystemComponent());
+	if (!Asc)
+	{
+		UE_LOG(LogSignet, Error, TEXT("Unable to update Base Stats - ASC was NULL."));
+		return;
+	}
+
+	const auto PS = GetPlayerState<ASignetPlayerState>();
+	if (!PS)
+	{
+		UE_LOG(LogSignet, Error, TEXT("Unable to update Base Stats - Player State was NULL."));
+		return;
+	}
+	
+	// Remove the existing base stats effect
+	if (BaseStatsEffectHandle.IsValid())
+	{
+		Asc->RemoveActiveGameplayEffect(BaseStatsEffectHandle);
+	}
+
+	FStatCalculation CalcParams;
+	CalcParams.Job = static_cast<int>(PS->Job);
+	CalcParams.JobLevel = PS->Level;
+	CalcParams.SubJob = 0;
+	CalcParams.SubJobLevel = 0;
+	CalcParams.bIsPlayer = true;
+	CalcParams.Race = static_cast<int>(PS->Race);
+
+	const auto [HP, MP, STR, DEX, VIT, AGI, INT, MND, CHR] = UStatsFunctions::CalcBaseStats(CalcParams);
+
+	auto Ctx = Asc->MakeEffectContext();
+	Ctx.AddSourceObject(this);
+
+	FGameplayEffectSpecHandle SpecHandle = Asc->MakeOutgoingSpec(BaseStatsEffectClass, /*Level=*/1.f, Ctx);
+	if (!SpecHandle.IsValid()) return;
+
+	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.Job, CalcParams.Job);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.JobLevel, CalcParams.JobLevel);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.SubJob, CalcParams.SubJob);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.SubJobLevel, CalcParams.SubJobLevel);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.STR, STR);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.DEX, DEX);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.VIT, VIT);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.AGI, AGI);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.INT, INT);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.MND, MND);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.CHR, CHR);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.MaxHP,  static_cast<float>(HP));
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.MaxMP,  static_cast<float>(MP));
+
+	// Apply & Store Active Effect
+	BaseStatsEffectHandle = Asc->ApplyGameplayEffectSpecToSelf(*Spec);
+
+	// Heal the Player
+	Heal();
+}
+
+void ASignetPlayerCharacter::Heal_Implementation()
+{
+	const auto Asc = Cast<USignetAbilitySystemComponent>(GetAbilitySystemComponent());
+	if (!Asc)
+	{
+		UE_LOG(LogSignet, Error, TEXT("Unable to update Base Stats - ASC was NULL."));
+		return;
+	}
+
+	bool bFound = false;
+	const auto MaxHP = Asc->GetGameplayAttributeValue(USignetPrimaryAttributeSet::GetMaxHPAttribute(), bFound);
+	const auto MaxMP = Asc->GetGameplayAttributeValue(USignetPrimaryAttributeSet::GetMaxMPAttribute(), bFound);
+
+	auto Ctx = Asc->MakeEffectContext();
+	Ctx.AddSourceObject(this);
+
+	const auto SpecHandle = Asc->MakeOutgoingSpec(HealEffectClass, 1.f, Ctx);
+	if (!SpecHandle.IsValid()) return;
+
+	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.HP, MaxHP);
+	Spec->SetSetByCallerMagnitude(FTagCache::Get().Data.MP, MaxMP);
+	Asc->ApplyGameplayEffectSpecToSelf(*Spec);
 }
 
 void ASignetPlayerCharacter::BeginPlay()

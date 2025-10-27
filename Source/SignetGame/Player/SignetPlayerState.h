@@ -70,9 +70,13 @@ public:
 
 private:
 
+	class ASignetPlayerCharacter* GetSignetPawn();
+	
 	bool IsOwningClient() const;
 	FTimerHandle PersistDebounceTimer;
 	FTimerHandle UpdateDebounceTimer;
+	FTimerHandle StatsDebounceTimer;
 	void DebounceUpdate();
 	void DebouncePersist();
+	void DebounceRecalculateStats();
 };
