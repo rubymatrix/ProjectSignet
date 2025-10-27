@@ -53,4 +53,6 @@ private:
 	void OnProfileSaved(const FSignetPlayerProfile& Profile);
 	UFUNCTION()
 	void OnCurrencyAdded(const FCurrencyAdjustment& Data);
+
+	void DoServerTravelAll(const FName& MapAssetPath, const FString& Options);
 };

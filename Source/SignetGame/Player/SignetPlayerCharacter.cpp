@@ -9,8 +9,20 @@
 #include "Components/TargetingComponent.h"
 #include "Utility/AlsVector.h"
 #include "Net/UnrealNetwork.h"
+#include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
 
-ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+bool ASignetPlayerCharacter::IsAscValid() const
+{
+	return IsValid(GetSignetAsc());
+}
+
+USignetAbilitySystemComponent* ASignetPlayerCharacter::GetSignetAsc() const
+{
+	return Cast<USignetAbilitySystemComponent>(GetAbilitySystemComponent());
+}
+
+ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectInitializer)
+: Super(ObjectInitializer.SetDefaultSubobjectClass<USignetAbilitySystemComponent>(TEXT("AbilitySystemComponent")))
 {
 	// Initialize the camera system
 	Camera = CreateDefaultSubobject<USignetCameraComponent>(TEXT("Camera"));

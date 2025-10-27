@@ -12,6 +12,35 @@
 #include "SignetGame/UI/Admin/SGProfileEditorWidget.h"
 #include "SignetGame/Util/Logging.h"
 
+
+static FString BuildTravelURL(const FString& MapPath, const FString& Options)
+{
+	// MapPath examples:
+	//   "/Game/Signet/Maps/L_Dungeon01"  (cooked asset path)  OR
+	//   "L_Dungeon01"                    (short name in editor)
+	// Options examples:
+	//   "" or "Game=/Game/Signet/Core/BP_SignetGameMode.BP_SignetGameMode_C&MatchId=42"
+
+	FString Url = MapPath;
+
+	// If the Options string is empty, just return the map path.
+	if (Options.IsEmpty())
+	{
+		return Url;
+	}
+
+	// If Options already contains '?' treat it as a full query, else prepend '?'.
+	if (Options.Contains(TEXT("?")))
+	{
+		Url += Options;
+	}
+	else
+	{
+		Url += TEXT("?") + Options;
+	}
+	return Url;
+}
+
 ASignetPlayerController::ASignetPlayerController()
 {
 	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetBPClass(
@@ -35,8 +64,8 @@ void ASignetPlayerController::BeginPlay()
 	if (IsLocalController())
 	{
 		InitializeAdminUI();
-		// SetInputMode(FInputModeGameAndUI());
-		// bShowMouseCursor = true;
+		SetInputMode(FInputModeGameAndUI());
+		bShowMouseCursor = true;
 	}
 }
 
@@ -92,6 +121,28 @@ void ASignetPlayerController::ServerDebugLogConnections_Implementation()
 			UE_LOG(LogSignet, Log, TEXT("Player: %s - Lv %i %s"), *LobbyPlayer->PlayerName, LobbyPlayer->Level, *UEnum::GetValueAsString(LobbyPlayer->Job));
 		}
 	}
+}
+
+void ASignetPlayerController::DoServerTravelAll(const FName& MapAssetPath, const FString& Options)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return; // Only the server can call ServerTravel
+	}
+
+	// Optional but handy: ensure seamless travel is on (also set in GameMode/INI).
+	if (AGameModeBase* GM = World->GetAuthGameMode())
+	{
+		GM->bUseSeamlessTravel = true;
+	}
+
+	// Build URL and go
+	const FString URL = BuildTravelURL(MapAssetPath.ToString(), Options);
+
+	// true = absolute, but also enables seamless pathing when bUseSeamlessTravel is set
+	const bool bAbsolute = true;
+	World->ServerTravel(URL, bAbsolute);
 }
 
 void ASignetPlayerController::InitializeAdminUI()

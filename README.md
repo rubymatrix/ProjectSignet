@@ -15,6 +15,5 @@
 💾 Save Subsystem: Custom USignetSaveSubsystem and USignetSaveGame managing autosaves, versioning, and profile synchronization.
 
 > Built with ❤️ by Red Lotus Games — designed to rekindle the cooperative adventure spirit of Vana’diel in Unreal Engine.
-
-> Note: No Final Fantasy XI game assets or code will be uploaded to this repository -- don't ask.
+> Note: No Final Fantasy XI game assets or code will be uploaded to this repository
 

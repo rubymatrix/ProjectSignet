@@ -9,6 +9,7 @@
 #include "SignetPlayerCharacter.generated.h"
 
 
+class USignetAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
 
 class UInventoryComponent;
@@ -70,6 +71,11 @@ protected:
 	TObjectPtr<UInventoryComponent> Inventory;
 
 public:
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsAscValid() const;
+
+	FORCEINLINE USignetAbilitySystemComponent* GetSignetAsc() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UStatsComponent* GetStatsComponent() const { return Stats; }
