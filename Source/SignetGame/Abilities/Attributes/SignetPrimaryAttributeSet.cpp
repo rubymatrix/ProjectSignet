@@ -27,7 +27,6 @@
 
 USignetPrimaryAttributeSet::USignetPrimaryAttributeSet()
 {
-	DRAGON_PRIMARY_ATTRS(DRAGON_INIT)
 }
 
 void USignetPrimaryAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)

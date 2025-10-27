@@ -87,10 +87,10 @@ struct SIGNETGAME_API FInventoryItem
 	EGearSlot GearSlot = EGearSlot::None;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FGameplayTag WeaponSkill;
+	FGameplayTag WeaponSkill = FGameplayTag::EmptyTag;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	ESoundSlot ImpactSoundType;
+	ESoundSlot ImpactSoundType = ESoundSlot::Default;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	EFaceClipStage FaceClippingStage = EFaceClipStage::None;
