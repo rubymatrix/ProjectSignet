@@ -13,6 +13,7 @@
 #include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
 #include "SignetGame/Abilities/TagCache.h"
 #include "SignetGame/Abilities/Attributes/SignetPrimaryAttributeSet.h"
+#include "SignetGame/Inventory/SignetInventoryComponent.h"
 #include "SignetGame/Util/Logging.h"
 #include "SignetGame/Util/Stats.h"
 
@@ -61,7 +62,7 @@ ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectI
 	// Initialize Gameplay Components
 	Stats = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComp"));
 	Targeting = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComp"));
-	Inventory = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComp"));
+	Inventory = CreateDefaultSubobject<USignetInventoryComponent>(TEXT("Inventory"));
 }
 
 void ASignetPlayerCharacter::NotifyControllerChanged()
@@ -177,7 +178,6 @@ void ASignetPlayerCharacter::Heal_Implementation()
 void ASignetPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ASignetPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

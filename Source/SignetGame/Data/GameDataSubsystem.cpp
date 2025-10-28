@@ -10,20 +10,39 @@ void UGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
-	if (CharacterPartsTableRef.IsNull())
+	if (!CharacterPartsTableRef.IsNull())
 	{
-		UE_LOG(LogSignetGameData, Error, TEXT("Missing reference to Character Parts Table.  GameDataSubsystem will not funciton."));
-		return;
-	}
+		CharacterPartsTable = CharacterPartsTableRef.LoadSynchronous();
+		UE_LOG(LogTemp, Display, TEXT("Loaded CharacterPartsTable: %s"),
+			*GetNameSafe(CharacterPartsTable));
 
-	CharacterPartsTable = CharacterPartsTableRef.LoadSynchronous();
-	if (CharacterPartsTable == nullptr)
-	{
-		UE_LOG(LogSignetGameData, Error, TEXT("CharacterPartsTable failed to load and is NULL."));
+		bCharacterPartsLoaded = true;
 	}
 	else
 	{
-		bCharacterPartsLoaded = true;
+		UE_LOG(LogTemp, Warning, TEXT("CharacterPartsTableRef is null (check INI)."));
+	}
+
+	if (!ItemTableRef.IsNull())
+	{
+		ItemTable = ItemTableRef.LoadSynchronous();
+		UE_LOG(LogTemp, Display, TEXT("Loaded ItemTable: %s"),
+			*GetNameSafe(ItemTable));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ItemTableRef is null (check INI)."));
+	}
+	
+
+	// Hydrate the item cache
+	for (const auto& Pair : ItemTable->GetRowMap())
+	{
+		const auto* Row = reinterpret_cast<const FItemRow*>(Pair.Value);
+		if (Row && Row->Item.ItemID != 0)
+		{
+			ItemCache.Add(Row->Item.ItemID, Row->Item);
+		}
 	}
 }
 
@@ -60,4 +79,10 @@ bool UGameDataSubsystem::GetCharacterParts(const ERace& TargetRace, FCharacterPa
 
 	UE_LOG(LogSignetGameData, Error, TEXT("Requested %s but no row found matching."), *Data::GetRowNameFromEnum(TargetRace).ToString());
 	return false;
+}
+
+const FInventoryItem* UGameDataSubsystem::GetItem(const int32 ItemId)
+{
+	if (ItemTable == nullptr || ItemCache.IsEmpty()) return nullptr;
+	return ItemCache.Find(ItemId);
 }

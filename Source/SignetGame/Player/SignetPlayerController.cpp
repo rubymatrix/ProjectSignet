@@ -3,6 +3,7 @@
 
 #include "SignetPlayerController.h"
 
+#include "SignetCheats.h"
 #include "SignetPlayerState.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
@@ -55,6 +56,8 @@ ASignetPlayerController::ASignetPlayerController()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to find WBP_SGProfileEditor class at the given path."));
 	}
+
+	CheatClass = USignetCheatManager::StaticClass();
 }
 
 void ASignetPlayerController::BeginPlay()

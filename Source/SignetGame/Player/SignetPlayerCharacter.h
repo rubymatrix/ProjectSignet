@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AlsCharacter.h"
 #include "InputActionValue.h"
+#include "SignetCheats.h"
 #include "VisualState.h"
 #include "SignetPlayerCharacter.generated.h"
 
@@ -12,6 +13,7 @@
 class USignetAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
 
+class USignetInventoryComponent;
 class UInventoryComponent;
 class UTargetingComponent;
 class UStatsComponent;
@@ -68,7 +70,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
 	TObjectPtr<UTargetingComponent> Targeting;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
-	TObjectPtr<UInventoryComponent> Inventory;
+	TObjectPtr<USignetInventoryComponent> Inventory;
 
 public:
 
@@ -84,7 +86,7 @@ public:
 	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return Targeting; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE UInventoryComponent* GetInventoryComponent() const { return Inventory; }
+	FORCEINLINE USignetInventoryComponent* GetInventoryComponent() const { return Inventory; }
 
 protected:
 
@@ -149,6 +151,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Gameplay")
 	TSubclassOf<UGameplayEffect> HealEffectClass;
+
+// Cheats
+
+
 	
 public:
 	

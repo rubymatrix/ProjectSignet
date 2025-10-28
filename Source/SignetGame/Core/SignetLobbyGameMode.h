@@ -33,6 +33,17 @@ private:
 	void ElectLeaderIfNone();
 
 	ASignetPlayerState* FindCurrentLeader() const;
+
+public:
+	
+	UFUNCTION(Exec) void InvPrintTarget(const FString& Target);
+	UFUNCTION(Exec) void GiveItemTarget(const FString& Target, int32 ItemID, int32 Qty);
+	UFUNCTION(Exec) void EquipIDTarget(const FString& Target, int32 Slot, int32 ItemID);
+	UFUNCTION(Exec) void UnequipTarget(const FString& Target, int32 Slot);
+
+private:
+	APlayerController* ResolveTargetPC(const FString& Target) const; // nullptr means not found
+	void PrintInventoryForPC(APlayerController* PC) const;
 };
 
 

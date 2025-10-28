@@ -32,8 +32,7 @@ public:
 	void SetDataFromSave();
 	
 private:
-
-	FString GetJobName(const EJob JobType);
+	
 	FText GetText(int Amount);
 	
 };

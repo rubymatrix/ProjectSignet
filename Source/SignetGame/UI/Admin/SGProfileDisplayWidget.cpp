@@ -39,25 +39,6 @@ void USGProfileDisplayWidget::SetDataFromSave()
 	Gil->SetText(GetText(Save->Wallet.Gil));
 }
 
-FString USGProfileDisplayWidget::GetJobName(const EJob JobType)
-{
-	TMap<EJob, FString> JobNameMap = {
-		{ EJob::Warrior, TEXT("Warrior") },
-		{ EJob::Monk, TEXT("Monk") },
-		{ EJob::Thief, TEXT("Thief") },
-		{ EJob::BlackMage, TEXT("Black Mage") },
-		{ EJob::RedMage, TEXT("Red Mage") },
-		{ EJob::WhiteMage, TEXT("White Mage") }
-	};
-
-	if (const auto JobName = JobNameMap.Find(JobType))
-	{
-		return *JobName;
-	}
-	
-	return TEXT("");
-}
-
 FText USGProfileDisplayWidget::GetText(int Amount)
 {
 	return FText::FromString(FString::FromInt(Amount));

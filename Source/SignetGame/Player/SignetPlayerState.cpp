@@ -32,6 +32,7 @@ void ASignetPlayerState::ReceivedPlayerProfile()
 {
 	if (HasAuthority())
 	{
+		
 		DebounceUpdate();
 		DebounceRecalculateStats();
 	}

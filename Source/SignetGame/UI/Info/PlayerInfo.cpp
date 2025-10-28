@@ -18,10 +18,7 @@ void UPlayerInfo::NativeConstruct()
 		InitWithActorInfo(Pawn);
 	}
 
-	if (const auto PS = Cast<ASignetPlayerState>(GetOwningPlayerState()))
-	{
-		PS->OnPlayerUpdated.AddDynamic(this, &UPlayerInfo::OnPlayerUpdated);
-	}
+	
 }
 
 void UPlayerInfo::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -31,6 +28,19 @@ void UPlayerInfo::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	if (!bInitialized)
 	{
 		InitWithActorInfo(GetOwningPlayerPawn());
+	}
+
+	if (!bFoundPlayerState)
+	{
+		if (const auto P = GetOwningPlayer())
+		{
+			if (const auto PS = P->GetPlayerState<ASignetPlayerState>())
+			{
+				SetPlayerName();
+				PS->OnPlayerUpdated.AddDynamic(this, &UPlayerInfo::OnPlayerUpdated);
+				bFoundPlayerState = true;
+			}
+		}
 	}
 }
 
@@ -113,10 +123,13 @@ void UPlayerInfo::OnPlayerUpdated(ASignetPlayerState* Player)
 
 void UPlayerInfo::SetPlayerName()
 {
-	if (const auto PS = Cast<ASignetPlayerState>(GetOwningPlayerState()))
+	if (const auto P = GetOwningPlayer())
 	{
-		const auto Name = PS->GetPlayerName();
-		PlayerNameTextBlock->SetText(FText::FromString(Name));
+		if (const auto PS = P->GetPlayerState<ASignetPlayerState>())
+		{
+			const auto Name = PS->PlayerName;
+			PlayerNameTextBlock->SetText(FText::FromString(Name));
+		}
 	}
 }
 
@@ -141,7 +154,8 @@ void UPlayerInfo::SetJobText()
 	if (!PlayerAsc.IsValid()) return;
 
 	bool bFound = false;
-	const EJob Job = static_cast<EJob>(PlayerAsc->GetGameplayAttributeValue(USignetPrimaryAttributeSet::GetJobAttribute(), bFound));
+	const auto JobValue = PlayerAsc->GetGameplayAttributeValue(USignetPrimaryAttributeSet::GetJobAttribute(), bFound);
+	const auto Job = static_cast<EJob>(JobValue);
 	const auto JobAbbr = GetJobName(Job);
 	const int JobLevel = static_cast<int>(PlayerAsc->GetGameplayAttributeValue(USignetPrimaryAttributeSet::GetJobLevelAttribute(), bFound));
 	const auto Str = FString::Printf(TEXT("Lv%i %s"), JobLevel, *JobAbbr);

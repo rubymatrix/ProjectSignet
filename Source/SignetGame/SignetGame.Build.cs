@@ -8,7 +8,7 @@ public class SignetGame : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(["Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara", "UMG", "AIModule", "NavigationSystem"]);
+		PublicDependencyModuleNames.AddRange(["Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara", "UMG", "AIModule", "NavigationSystem", "NetCore", "Networking"]);
 		PublicDependencyModuleNames.AddRange([
 			"ALS", "ALSCamera",
 			"GameplayAbilities", "GameplayTags", "GameplayTasks", "GASCompanion",

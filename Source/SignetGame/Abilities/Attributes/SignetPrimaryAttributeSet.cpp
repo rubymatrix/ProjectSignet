@@ -34,7 +34,7 @@ void USignetPrimaryAttributeSet::PreAttributeChange(const FGameplayAttribute& At
 	if (Attribute == GetJobAttribute() || Attribute == GetSubJobAttribute())
 	{
 		// Clamp job and subjob to valid range
-		NewValue = FMath::Clamp(NewValue, 0.f, static_cast<float>(EJob::WhiteMage));
+		NewValue = FMath::Clamp(NewValue, 0.f, static_cast<float>(EJob::Ninja));
 	}
 
 	if (Attribute == GetJobLevelAttribute() || Attribute == GetSubJobLevelAttribute())

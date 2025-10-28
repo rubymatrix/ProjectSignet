@@ -41,6 +41,7 @@ struct FDataTags
 		SubJobDivisor = FGameplayTag::RequestGameplayTag(TEXT("Data.SubJobDivisor"));
 		HealAfterInit = FGameplayTag::RequestGameplayTag(TEXT("Data.HealAfterInit"));
 		HP = FGameplayTag::RequestGameplayTag(TEXT("Data.SBC.HP"));
+		MP = FGameplayTag::RequestGameplayTag(TEXT("Data.SBC.MP"));
 		MaxHP = FGameplayTag::RequestGameplayTag(TEXT("Data.SBC.MaxHP"));
 		MaxHP = FGameplayTag::RequestGameplayTag(TEXT("Data.SBC.MaxHP"));
 		MaxMP = FGameplayTag::RequestGameplayTag(TEXT("Data.SBC.MaxMP"));

@@ -57,6 +57,7 @@ public:
 private:
 
 	bool bInitialized = false;
+	bool bFoundPlayerState = false;
 
 	TMap<FGameplayAttribute, FDelegateHandle> BoundAttributeHandles;
 	TWeakObjectPtr<USignetAbilitySystemComponent> PlayerAsc;
@@ -67,6 +68,7 @@ private:
 
 	void OnAttributeChanged(const FOnAttributeChangeData& Data);
 
+	UFUNCTION()
 	void OnPlayerUpdated(ASignetPlayerState* Player);
 
 	void SetPlayerName();
