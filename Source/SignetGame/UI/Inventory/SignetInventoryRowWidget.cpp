@@ -3,14 +3,18 @@
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
+#include "Components/Button.h"
+#include "SignetGame/Inventory/SignetInventoryComponent.h"
 
 
 void USignetInventoryRowWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-	if (const auto* Data = Cast<USignetInventoryListItem>(ListItemObject))
+	if (const auto Data = Cast<USignetInventoryListItem>(ListItemObject))
 	{
 		const auto Color = FSlateColor{FLinearColor::FromSRGBColor(FColor::White)};
 		const auto ActiveColor = FSlateColor{FLinearColor::FromSRGBColor(FColor::FromHex("81F1A8"))};
+
+		Item = Data;
 		
 		if (NameText)
 		{
@@ -66,5 +70,35 @@ void USignetInventoryRowWidget::NativeOnListItemObjectSet(UObject* ListItemObjec
 
 			IconOutline->SetBrush(Brush);
 		}
+
+		if (RootButton)
+		{
+			if (!RootButton->OnClicked.IsAlreadyBound(this, &ThisClass::HandleClicked))
+			{
+				RootButton->OnClicked.AddDynamic(this, &ThisClass::HandleClicked);
+			}
+		}
 	}
+}
+
+void USignetInventoryRowWidget::HandleClicked()
+{
+	const auto InvComp = GetOwningPlayerPawn()->GetComponentByClass<USignetInventoryComponent>();
+	if (!InvComp) return;
+	
+	if (Item.IsValid())
+	{
+		if (!InvComp->IsEquipped(Item->InstanceId))
+		{
+			InvComp->ServerEquipFromInstance(Item->GearSlot, Item->InstanceId);
+		}
+		else
+		{
+			InvComp->ServerUnequip(Item->GearSlot);
+		}
+	}
+}
+
+void USignetInventoryRowWidget::HandleRightClicked()
+{
 }

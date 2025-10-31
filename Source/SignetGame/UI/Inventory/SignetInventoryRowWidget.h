@@ -19,6 +19,9 @@ public:
 
 protected:
 
+	UPROPERTY()
+	TWeakObjectPtr<USignetInventoryListItem> Item;
+	
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UButton> RootButton = nullptr;
 	
@@ -33,4 +36,9 @@ protected:
 	
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UBorder> IconOutline = nullptr;
+
+private:
+
+	UFUNCTION() void HandleClicked();
+	UFUNCTION() void HandleRightClicked();
 };

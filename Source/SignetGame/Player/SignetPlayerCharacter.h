@@ -241,6 +241,14 @@ public:
 	void ApplyBaseCharacter();
 	void ApplyEquipmentSlot(const EGearSlot InGearSlot);
 
+	UFUNCTION(BlueprintCallable)
+	void UpdateRace(const ERace NewRace);
+	UFUNCTION(BlueprintCallable)
+	void UpdateFace(const EFace NewFace);
+
+	void CaptureVisualState(const ERace NewRace, const EFace NewFace);
+	
+
 private:
 	
 	void ApplyDefaultMesh(const EGearSlot InGearSlot, const FCharacterPartsRow* Parts);

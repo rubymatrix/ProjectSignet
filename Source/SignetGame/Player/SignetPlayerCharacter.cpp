@@ -332,6 +332,7 @@ void ASignetPlayerCharacter::Input_OnMenu(const FInputActionValue& ActionValue)
 
 void ASignetPlayerCharacter::OnRep_VisualState()
 {
+	RefreshAllSlots();
 	VisualStateUpdated.Broadcast(VisualState);
 }
 
@@ -582,6 +583,41 @@ void ASignetPlayerCharacter::ApplyEquipmentSlot(const EGearSlot InGearSlot)
 		ApplyFace(Parts, DesiredClipStage);
 	}
 	
+}
+
+void ASignetPlayerCharacter::UpdateRace(const ERace NewRace)
+{
+	CurrentRace = NewRace;
+	RefreshAllSlots();
+}
+
+void ASignetPlayerCharacter::UpdateFace(const EFace NewFace)
+{
+	CurrentFace = NewFace;
+	ApplyEquipmentSlot(EGearSlot::Head);
+}
+
+void ASignetPlayerCharacter::CaptureVisualState(const ERace NewRace, const EFace NewFace)
+{
+	const auto Inv = InventoryComponent;
+	if (!Inv) return;
+	
+	VisualState = {
+		.Race = NewRace,
+		.Face = NewFace,
+		.MainID = Inv->GetEquippedItemID(EGearSlot::Main),
+		.SubID = Inv->GetEquippedItemID(EGearSlot::Sub),
+		.HeadID = Inv->GetEquippedItemID(EGearSlot::Head),
+		.BodyID = Inv->GetEquippedItemID(EGearSlot::Body),
+		.HandsID = Inv->GetEquippedItemID(EGearSlot::Hands),
+		.LegsID = Inv->GetEquippedItemID(EGearSlot::Legs),
+		.FeetID = Inv->GetEquippedItemID(EGearSlot::Feet),
+	};
+
+	if (HasAuthority())
+	{
+		RefreshAllSlots();
+	}
 }
 
 void ASignetPlayerCharacter::ApplyDefaultMesh(const EGearSlot InGearSlot, const FCharacterPartsRow* Parts)

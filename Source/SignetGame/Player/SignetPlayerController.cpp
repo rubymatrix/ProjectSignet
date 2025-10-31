@@ -151,19 +151,19 @@ void ASignetPlayerController::ServerSubmitInventorySnapshot_Implementation(const
 		auto PS = GetPlayerState<ASignetPlayerState>();
 		if (!PS) return;
 
-		// Refresh Gear Slots
-		P->RefreshAllSlots();
-
-		// Do it on the clients too
-		InitializeVisualComponents();
+		P->CaptureVisualState(PS->Race, PS->Face);
 	}
 }
 
 void ASignetPlayerController::InitializeVisualComponents_Implementation()
 {
+	const auto PS = GetPlayerState<ASignetPlayerState>();
+	if (!PS) return;
 	const auto P = Cast<ASignetPlayerCharacter>(GetPawn());
 	if (!P) return;
-	P->RefreshAllSlots();
+
+	P->UpdateFace(PS->Face);
+	P->UpdateRace(PS->Race);
 }
 
 void ASignetPlayerController::ServerDebugLogConnections_Implementation()

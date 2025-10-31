@@ -37,11 +37,13 @@ void ASignetPlayerState::OnRep_CurrentExp() { DebouncePersist(); }
 void ASignetPlayerState::SetRace_Implementation(const ERace& NewRace)
 {
 	Race = NewRace;
+	TriggerRaceVisualUpdate();
 }
 
 void ASignetPlayerState::SetFace_Implementation(const EFace& NewFace)
 {
 	Face = NewFace;
+	TriggerFaceVisualUpdate();
 }
 
 void ASignetPlayerState::ReceivedPlayerProfile()
@@ -165,10 +167,24 @@ void ASignetPlayerState::DebounceRecalculateStats()
 
 void ASignetPlayerState::TriggerFaceVisualUpdate()
 {
+	const auto W = GetWorld();
+	if (!W) return;
+	
+	const auto P = Cast<ASignetPlayerCharacter>(GetPawn());
+	if (!P) return;
+	
+	P->CaptureVisualState(Race, Face);
 }
 
 void ASignetPlayerState::TriggerRaceVisualUpdate()
 {
+	const auto W = GetWorld();
+	if (!W) return;
+	
+	const auto P = Cast<ASignetPlayerCharacter>(GetPawn());
+	if (!P) return;
+
+	P->CaptureVisualState(Race, Face);
 }
 
 void ASignetPlayerState::ValidateEquipment() const

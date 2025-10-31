@@ -152,6 +152,7 @@ void USignetInventoryListWidget::RebuildList()
 			Row->Icon        = Cast<UTexture2D>(Def->Icon);
 			Row->ItemQuality = Def->ItemQuality;
 			Row->ItemType    = Def->ItemType;
+			Row->GearSlot	 = Def->GearSlot;
 		}
 		else
 		{

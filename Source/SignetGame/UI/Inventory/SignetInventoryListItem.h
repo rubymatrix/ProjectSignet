@@ -22,6 +22,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EItemType ItemType = EItemType::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EGearSlot GearSlot = EGearSlot::None;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	int Quantity = 0;

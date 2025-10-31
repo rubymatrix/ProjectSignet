@@ -71,7 +71,7 @@ void USignetInventoryComponent::BeginPlay()
 void USignetInventoryComponent::InvPrint()
 {
 	auto Print = [](const FString& S){
-		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, S);
+		if (GEngine && ENABLE_INVENTORY_DEBUG) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, S);
 		UE_LOG(LogTemp, Log, TEXT("%s"), *S);
 	};
 
@@ -305,31 +305,31 @@ void USignetInventoryComponent::ClientSyncInventory_Implementation(const FSignet
 
 void USignetInventoryComponent::HandleBagAdded(int32 ItemID, uint16 Qty)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
+	if (GEngine && ENABLE_INVENTORY_DEBUG) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
 		FString::Printf(TEXT("[BagAdded] %d x%d"), ItemID, static_cast<int32>(Qty)));
 }
 
 void USignetInventoryComponent::HandleBagChanged(int32 ItemID, uint16 NewQty)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
+	if (GEngine && ENABLE_INVENTORY_DEBUG) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
 		FString::Printf(TEXT("[BagChanged] %d -> %d"), ItemID, static_cast<int32>(NewQty)));
 }
 
 void USignetInventoryComponent::HandleBagRemoved(int32 ItemID)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
+	if (GEngine && ENABLE_INVENTORY_DEBUG) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
 		FString::Printf(TEXT("[BagRemoved] %d"), ItemID));
 }
 
 void USignetInventoryComponent::HandleEquipID(EGearSlot Slot, int32 OldID, int32 NewID)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow,
+	if (GEngine && ENABLE_INVENTORY_DEBUG) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow,
 		FString::Printf(TEXT("[EquipID] Slot %d: %d -> %d"), static_cast<int32>(Slot), OldID, NewID));
 }
 
 void USignetInventoryComponent::HandleEquipInstance(EGearSlot Slot, FGuid OldG, FGuid NewG)
 {
-	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow,
+	if (GEngine && ENABLE_INVENTORY_DEBUG) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow,
 		FString::Printf(TEXT("[EquipInst] Slot %d: %s -> %s"),
 			static_cast<int32>(Slot), *OldG.ToString(), *NewG.ToString()));
 }

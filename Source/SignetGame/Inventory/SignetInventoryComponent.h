@@ -17,6 +17,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam (FOnBagEntryRemoved, int32, ItemID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnEquipmentChanged,         EGearSlot, Slot, int32, OldItemID, int32, NewItemID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnEquipmentChangedInstance, EGearSlot, Slot, FGuid, OldInstance, FGuid, NewInstance);
 
+constexpr bool ENABLE_INVENTORY_DEBUG = false;
+
 UCLASS(ClassGroup=(Signet), meta=(BlueprintSpawnableComponent))
 class SIGNETGAME_API USignetInventoryComponent : public UActorComponent
 {

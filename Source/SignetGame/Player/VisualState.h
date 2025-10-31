@@ -17,12 +17,12 @@ struct SIGNETGAME_API FVisualState
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	EFace Face = EFace::F1A;
 
-	UPROPERTY(VisibleAnywhere) uint16 MainID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 SubID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 RangeID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 HeadID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 BodyID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 HandsID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 LegsID = 0;
-	UPROPERTY(VisibleAnywhere) uint16 FeetID = 0;
+	UPROPERTY(VisibleAnywhere) int32 MainID = 0;
+	UPROPERTY(VisibleAnywhere) int32 SubID = 0;
+	UPROPERTY(VisibleAnywhere) int32 RangeID = 0;
+	UPROPERTY(VisibleAnywhere) int32 HeadID = 0;
+	UPROPERTY(VisibleAnywhere) int32 BodyID = 0;
+	UPROPERTY(VisibleAnywhere) int32 HandsID = 0;
+	UPROPERTY(VisibleAnywhere) int32 LegsID = 0;
+	UPROPERTY(VisibleAnywhere) int32 FeetID = 0;
 };
