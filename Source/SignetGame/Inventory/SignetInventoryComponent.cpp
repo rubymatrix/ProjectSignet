@@ -4,7 +4,10 @@
 #include "SignetInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "SignetGame/Data/GameDataSubsystem.h"
+#include "SignetGame/Save/SignetSaveSubsystem.h"
 
+
+class USignetSaveSubsystem;
 
 void FInvList::PreReplicatedRemove(const TArrayView<int32>& Removed, int32)
 {
@@ -190,16 +193,126 @@ void USignetInventoryComponent::BroadcastEquipChangeFromArrays(const TArray<int3
 	}
 }
 
+void USignetInventoryComponent::CaptureToSave(FSignetSavedInventory& Out) const
+{
+	Out = FSignetSavedInventory{};
+	Out.Bag.Reserve(Bag.Entries.Num());
+
+	for (const auto& E : Bag.Entries)
+	{
+		FSignetSavedBagEntry SE;
+		SE.ItemID     = E.ItemID;
+		SE.Quantity   = (int32)E.Quantity;
+		SE.InstanceId = E.InstanceId;
+		Out.Bag.Add(SE);
+	}
+
+	Out.EquippedItemIDs     = EquippedItemIDs;
+	Out.EquippedInstanceIds = EquippedInstanceIds;
+	Out.SchemaVersion       = 1;
+}
+
+void USignetInventoryComponent::LoadFromSave(const FSignetSavedInventory& In)
+{
+	Bag.Entries.Reset();
+	
+	Bag.Entries.Reserve(In.Bag.Num());
+	for (const auto& SE : In.Bag)
+	{
+		auto& NewE = Bag.Entries.AddDefaulted_GetRef();
+		NewE.ItemID     = SE.ItemID;
+		NewE.Quantity   = (uint16)FMath::Clamp(SE.Quantity, 0, 65535);
+		NewE.InstanceId = SE.InstanceId;
+	}
+	Bag.MarkArrayDirty();
+	
+	const int32 SlotCount = USignetInventoryComponent::SlotCount();
+
+	EquippedItemIDs.SetNum(SlotCount);
+	EquippedInstanceIds.SetNum(SlotCount);
+
+	if (In.EquippedItemIDs.Num() == SlotCount)
+	{
+		EquippedItemIDs = In.EquippedItemIDs;
+	}
+	else
+	{
+		for (int32 i = 0; i < SlotCount; ++i) { EquippedItemIDs[i] = 0; }
+	}
+
+	if (In.EquippedInstanceIds.Num() == SlotCount)
+	{
+		EquippedInstanceIds = In.EquippedInstanceIds;
+	}
+	else
+	{
+		for (int32 i = 0; i < SlotCount; ++i) { EquippedInstanceIds[i] = FGuid(); }
+	}
+	
+	for (int32 i = 0; i < SlotCount; ++i)
+	{
+		const int32 ItemID = EquippedItemIDs[i];
+		const FGuid Inst   = EquippedInstanceIds[i];
+
+		if (ItemID == 0 || !Inst.IsValid())
+		{
+			EquippedItemIDs[i]     = 0;
+			EquippedInstanceIds[i] = FGuid();
+			continue;
+		}
+
+		bool bFound = false;
+		for (const auto& E : Bag.Entries)
+		{
+			if (E.ItemID == ItemID && E.InstanceId == Inst)
+			{
+				bFound = true;
+				break;
+			}
+		}
+		if (!bFound)
+		{
+			EquippedItemIDs[i]     = 0;
+			EquippedInstanceIds[i] = FGuid();
+		}
+	}
+}
+
+void USignetInventoryComponent::ServerInventoryMutated()
+{
+	FSignetSavedInventory Snapshot;
+	CaptureToSave(Snapshot);
+	ClientSyncInventory(Snapshot);
+}
+
+void USignetInventoryComponent::ClientSyncInventory_Implementation(const FSignetSavedInventory& Snapshot)
+{
+	if (const UWorld* W = GetWorld())
+	{
+		if (const UGameInstance* GI = W->GetGameInstance())
+		{
+			if (const auto SaveSys = GI->GetSubsystem<USignetSaveSubsystem>())
+			{
+				if (auto* Save = SaveSys->GetSave())
+				{
+					Save->Inventory = Snapshot;
+					SaveSys->MarkDirty();
+				}
+			}
+		}
+	}
+}
+
 void USignetInventoryComponent::HandleBagAdded(int32 ItemID, uint16 Qty)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
-		FString::Printf(TEXT("[BagAdded] %d x%d"), ItemID, (int32)Qty));
+		FString::Printf(TEXT("[BagAdded] %d x%d"), ItemID, static_cast<int32>(Qty)));
 }
 
 void USignetInventoryComponent::HandleBagChanged(int32 ItemID, uint16 NewQty)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan,
-		FString::Printf(TEXT("[BagChanged] %d -> %d"), ItemID, (int32)NewQty));
+		FString::Printf(TEXT("[BagChanged] %d -> %d"), ItemID, static_cast<int32>(NewQty)));
 }
 
 void USignetInventoryComponent::HandleBagRemoved(int32 ItemID)
@@ -211,31 +324,40 @@ void USignetInventoryComponent::HandleBagRemoved(int32 ItemID)
 void USignetInventoryComponent::HandleEquipID(EGearSlot Slot, int32 OldID, int32 NewID)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow,
-		FString::Printf(TEXT("[EquipID] Slot %d: %d -> %d"), (int32)Slot, OldID, NewID));
+		FString::Printf(TEXT("[EquipID] Slot %d: %d -> %d"), static_cast<int32>(Slot), OldID, NewID));
 }
 
 void USignetInventoryComponent::HandleEquipInstance(EGearSlot Slot, FGuid OldG, FGuid NewG)
 {
 	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow,
 		FString::Printf(TEXT("[EquipInst] Slot %d: %s -> %s"),
-			(int32)Slot, *OldG.ToString(), *NewG.ToString()));
+			static_cast<int32>(Slot), *OldG.ToString(), *NewG.ToString()));
 }
 
 
 void USignetInventoryComponent::ServerTryAddItem_Implementation(int32 ItemID, int32 Quantity)
 {
 	int32 Leftover = 0;
-	TryAddItem_Internal(ItemID, Quantity, Leftover);
+	if (TryAddItem_Internal(ItemID, Quantity, Leftover))
+	{
+		ServerInventoryMutated();
+	}
 }
 
 void USignetInventoryComponent::ServerConsumeItem_Implementation(int32 ItemID, int32 Quantity)
 {
-	TryRemoveItem_Internal(ItemID, Quantity);
+	if (TryRemoveItem_Internal(ItemID, Quantity))
+	{
+		ServerInventoryMutated();
+	}
 }
 
 void USignetInventoryComponent::ServerEquipItemByItemID_Implementation(EGearSlot Slot, int32 ItemID)
 {
-	TryEquip_Internal(Slot, ItemID, FGuid());
+	if (TryEquip_Internal(Slot, ItemID, FGuid()))
+	{
+		ServerInventoryMutated();
+	}
 }
 
 void USignetInventoryComponent::ServerEquipFromInstance_Implementation(EGearSlot Slot, const FGuid& InstanceId)
@@ -251,13 +373,19 @@ void USignetInventoryComponent::ServerEquipFromInstance_Implementation(EGearSlot
 	}
 	if (FoundItemID != 0)
 	{
-		TryEquip_Internal(Slot, FoundItemID, InstanceId);
+		if (TryEquip_Internal(Slot, FoundItemID, InstanceId))
+		{
+			ServerInventoryMutated();
+		}
 	}
 }
 
 void USignetInventoryComponent::ServerUnequip_Implementation(EGearSlot Slot)
 {
-	TryUnequip_Internal(Slot);
+	if (TryUnequip_Internal(Slot))
+	{
+		ServerInventoryMutated();
+	}
 }
 
 bool USignetInventoryComponent::TryAddItem_Internal(int32 ItemID, int32 Quantity, int32& OutLeftover)

@@ -133,7 +133,8 @@ enum class EFace : uint8
 	F5A, F5B,
 	F6A, F6B,
 	F7A, F7B,
-	F8A, F8B
+	F8A, F8B,
+	Invalid
 };
 
 
@@ -241,4 +242,39 @@ struct SIGNETGAME_API FSignetPlayerProfile
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 	EFace SelectedFace = EFace::F1A;
+};
+
+USTRUCT(BlueprintType)
+struct SIGNETGAME_API FSignetSavedBagEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 ItemID = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Quantity = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGuid InstanceId; // valid for equipment, invalid for stack
+};
+
+USTRUCT(BlueprintType)
+struct SIGNETGAME_API FSignetSavedInventory
+{
+	GENERATED_BODY()
+
+	// Full bag, 1:1 with what we showed in the list widget
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FSignetSavedBagEntry> Bag;
+
+	// Equipped by slot (index == (int32)EGearSlot)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<int32> EquippedItemIDs;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FGuid> EquippedInstanceIds;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 SchemaVersion = 1;
 };

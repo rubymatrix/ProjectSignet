@@ -2,11 +2,11 @@
 
 
 #include "SignetPlayerState.h"
-
 #include "SignetPlayerCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "SignetGame/Save/SignetSaveSubsystem.h"
 #include "SignetGame/Util/Logging.h"
+#include "SignetGame/Inventory/SignetInventoryComponent.h"
 
 void ASignetPlayerState::OnRep_IsLobbyHost()
 {
@@ -14,8 +14,14 @@ void ASignetPlayerState::OnRep_IsLobbyHost()
 
 void ASignetPlayerState::OnRep_DisplayName() { DebouncePersist(); }
 void ASignetPlayerState::OnRep_Nation() { DebouncePersist(); }
-void ASignetPlayerState::OnRep_Race() { DebouncePersist(); }
-void ASignetPlayerState::OnRep_Face() { DebouncePersist(); }
+void ASignetPlayerState::OnRep_Race()
+{
+	DebouncePersist();
+}
+void ASignetPlayerState::OnRep_Face()
+{
+	DebouncePersist();
+}
 void ASignetPlayerState::OnRep_Job()
 {
 	DebouncePersist();
@@ -28,11 +34,20 @@ void ASignetPlayerState::OnRep_Level()
 }
 void ASignetPlayerState::OnRep_CurrentExp() { DebouncePersist(); }
 
+void ASignetPlayerState::SetRace_Implementation(const ERace& NewRace)
+{
+	Race = NewRace;
+}
+
+void ASignetPlayerState::SetFace_Implementation(const EFace& NewFace)
+{
+	Face = NewFace;
+}
+
 void ASignetPlayerState::ReceivedPlayerProfile()
 {
 	if (HasAuthority())
 	{
-		
 		DebounceUpdate();
 		DebounceRecalculateStats();
 	}
@@ -145,4 +160,18 @@ void ASignetPlayerState::DebounceRecalculateStats()
 			}
 		}, 0.15f, false);
 	}
+}
+
+
+void ASignetPlayerState::TriggerFaceVisualUpdate()
+{
+}
+
+void ASignetPlayerState::TriggerRaceVisualUpdate()
+{
+}
+
+void ASignetPlayerState::ValidateEquipment() const
+{
+	// TODO: Make sure equipment is valid for new class
 }

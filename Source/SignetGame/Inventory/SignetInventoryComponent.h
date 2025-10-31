@@ -8,6 +8,7 @@
 #include "Components/ActorComponent.h"
 #include "SignetInventoryComponent.generated.h"
 
+struct FSignetSavedInventory;
 class USignetItemDataSubsystem;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBagEntryAdded,   int32, ItemID, uint16, Quantity);
@@ -86,6 +87,15 @@ public:
 	FInvList& GetBag() { return Bag; }
 	static FORCEINLINE int32 SlotToIndex(EGearSlot Slot) { return static_cast<int32>(Slot); }
 	static constexpr int32 SlotCount() { return static_cast<int32>(EGearSlot::Feet) + 1; }
+	void CaptureToSave(FSignetSavedInventory& Out) const;
+	void LoadFromSave(const FSignetSavedInventory& In);
+
+
+private:
+
+	void ServerInventoryMutated();
+	UFUNCTION(Client, Reliable)
+	void ClientSyncInventory(const FSignetSavedInventory& Snapshot);
 
 protected:
 	

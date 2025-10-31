@@ -35,17 +35,6 @@ void ASignetLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 	
-	if (auto* PC = Cast<ASignetPlayerController>(NewPlayer))
-	{
-		PC->ClientRequestProfileSnapshot();
-	}
-
-	if (IsValid(NewPlayer) && NewPlayer->CheatClass)
-	{
-		// Ensure the CheatManager exists and is ready on both listen server & clients
-		NewPlayer->EnableCheats(); // creates and InitCheatManager() internally
-	}
-
 	ElectLeaderIfNone();
 }
 

@@ -1,7 +1,7 @@
 ﻿// Copyright Red Lotus Games, All Rights Reserved.
 
 
-#include "PlayerInfo.h"
+#include "SignetPlayerInfoWidget.h"
 
 #include "Components/TextBlock.h"
 #include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
@@ -9,7 +9,7 @@
 #include "SignetGame/Player/SignetPlayerState.h"
 #include "SignetGame/Save/SignetSaveTypes.h"
 
-void UPlayerInfo::NativeConstruct()
+void USignetPlayerInfoWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
@@ -21,7 +21,7 @@ void UPlayerInfo::NativeConstruct()
 	
 }
 
-void UPlayerInfo::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void USignetPlayerInfoWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
@@ -37,14 +37,14 @@ void UPlayerInfo::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			if (const auto PS = P->GetPlayerState<ASignetPlayerState>())
 			{
 				SetPlayerName();
-				PS->OnPlayerUpdated.AddDynamic(this, &UPlayerInfo::OnPlayerUpdated);
+				PS->OnPlayerUpdated.AddDynamic(this, &USignetPlayerInfoWidget::OnPlayerUpdated);
 				bFoundPlayerState = true;
 			}
 		}
 	}
 }
 
-void UPlayerInfo::NativeDestruct()
+void USignetPlayerInfoWidget::NativeDestruct()
 {
 	Super::NativeDestruct();
 
@@ -60,7 +60,7 @@ void UPlayerInfo::NativeDestruct()
 	BoundAttributeHandles.Empty();
 }
 
-void UPlayerInfo::InitWithActorInfo(AActor* InActor)
+void USignetPlayerInfoWidget::InitWithActorInfo(AActor* InActor)
 {
 	if (const auto Asc = InActor->GetComponentByClass<USignetAbilitySystemComponent>())
 	{
@@ -86,7 +86,7 @@ void UPlayerInfo::InitWithActorInfo(AActor* InActor)
 	}
 }
 
-void UPlayerInfo::BindAttributeChange(const FGameplayAttribute& Attribute)
+void USignetPlayerInfoWidget::BindAttributeChange(const FGameplayAttribute& Attribute)
 {
 	if (!PlayerAsc.IsValid()) return;
 
@@ -96,7 +96,7 @@ void UPlayerInfo::BindAttributeChange(const FGameplayAttribute& Attribute)
 	BoundAttributeHandles.Add(Attribute, Handle);
 }
 
-void UPlayerInfo::OnAttributeChanged(const FOnAttributeChangeData& Data)
+void USignetPlayerInfoWidget::OnAttributeChanged(const FOnAttributeChangeData& Data)
 {
 	const auto Attr = Data.Attribute;
 	if (Attr == USignetPrimaryAttributeSet::GetJobAttribute()) {SetJobText();}
@@ -116,12 +116,12 @@ void UPlayerInfo::OnAttributeChanged(const FOnAttributeChangeData& Data)
 	if (Attr == USignetPrimaryAttributeSet::GetCHRAttribute()) {SetCHRText();}
 }
 
-void UPlayerInfo::OnPlayerUpdated(ASignetPlayerState* Player)
+void USignetPlayerInfoWidget::OnPlayerUpdated(ASignetPlayerState* Player)
 {
 	SetPlayerName();
 }
 
-void UPlayerInfo::SetPlayerName()
+void USignetPlayerInfoWidget::SetPlayerName()
 {
 	if (const auto P = GetOwningPlayer())
 	{
@@ -133,7 +133,7 @@ void UPlayerInfo::SetPlayerName()
 	}
 }
 
-void UPlayerInfo::Update()
+void USignetPlayerInfoWidget::Update()
 {
 	SetPlayerName();
 	SetJobText();
@@ -149,7 +149,7 @@ void UPlayerInfo::Update()
 	SetCHRText();
 }
 
-void UPlayerInfo::SetJobText()
+void USignetPlayerInfoWidget::SetJobText()
 {
 	if (!PlayerAsc.IsValid()) return;
 
@@ -162,7 +162,7 @@ void UPlayerInfo::SetJobText()
 	JobTextBlock->SetText(FText::FromString(Str));
 }
 
-void UPlayerInfo::SetSubJobText()
+void USignetPlayerInfoWidget::SetSubJobText()
 {
 	if (!PlayerAsc.IsValid()) return;
 	bool bFound = false;
@@ -182,7 +182,7 @@ void UPlayerInfo::SetSubJobText()
 	
 }
 
-void UPlayerInfo::SetHPText()
+void USignetPlayerInfoWidget::SetHPText()
 {
 	if (!PlayerAsc.IsValid()) return;
 	
@@ -193,7 +193,7 @@ void UPlayerInfo::SetHPText()
 	HPTextBlock->SetText(FText::FromString(Str));
 }
 
-void UPlayerInfo::SetMPText()
+void USignetPlayerInfoWidget::SetMPText()
 {
 	if (!PlayerAsc.IsValid()) return;
 	
@@ -204,42 +204,42 @@ void UPlayerInfo::SetMPText()
 	MPTextBlock->SetText(FText::FromString(Str));
 }
 
-void UPlayerInfo::SetSTRText()
+void USignetPlayerInfoWidget::SetSTRText()
 {
 	SetAttrText(STRTextBlock, USignetPrimaryAttributeSet::GetSTRAttribute());
 }
 
-void UPlayerInfo::SetDEXText()
+void USignetPlayerInfoWidget::SetDEXText()
 {
 	SetAttrText(DEXTextBlock, USignetPrimaryAttributeSet::GetDEXAttribute());
 }
 
-void UPlayerInfo::SetVITText()
+void USignetPlayerInfoWidget::SetVITText()
 {
 	SetAttrText(VITTextBlock, USignetPrimaryAttributeSet::GetVITAttribute());
 }
 
-void UPlayerInfo::SetAGIText()
+void USignetPlayerInfoWidget::SetAGIText()
 {
 	SetAttrText(AGITextBlock, USignetPrimaryAttributeSet::GetAGIAttribute());
 }
 
-void UPlayerInfo::SetINTText()
+void USignetPlayerInfoWidget::SetINTText()
 {
 	SetAttrText(INTTextBlock, USignetPrimaryAttributeSet::GetINTAttribute());
 }
 
-void UPlayerInfo::SetMNDText()
+void USignetPlayerInfoWidget::SetMNDText()
 {
 	SetAttrText(MNDTextBlock, USignetPrimaryAttributeSet::GetMNDAttribute());
 }
 
-void UPlayerInfo::SetCHRText()
+void USignetPlayerInfoWidget::SetCHRText()
 {
 	SetAttrText(CHRTextBlock, USignetPrimaryAttributeSet::GetCHRAttribute());
 }
 
-void UPlayerInfo::SetAttrText(UTextBlock* InText, const FGameplayAttribute& Attribute)
+void USignetPlayerInfoWidget::SetAttrText(UTextBlock* InText, const FGameplayAttribute& Attribute)
 {
 	if (!PlayerAsc.IsValid()) return;
 	if (!InText) return;

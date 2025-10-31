@@ -32,6 +32,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<EJob, FSignetJobProgress> Jobs;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FSignetSavedInventory Inventory;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<FString, FString> UserSettings;

@@ -37,10 +37,21 @@ public:
 	ASignetPlayerController();
 
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	
 	UFUNCTION(Client, Reliable) void ClientRequestProfileSnapshot();
 	UFUNCTION(Server, Reliable) void ServerSubmitProfileSnapshot(const FSignetProfileSnapshot Snapshot);
 	void ClientRequestProfileSnapshot_Implementation();
 	void ServerSubmitProfileSnapshot_Implementation(const FSignetProfileSnapshot Snapshot);
+
+	UFUNCTION(Client, Reliable)
+	void ClientRequestInventorySnapshot();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSubmitInventorySnapshot(const FSignetSavedInventory& Snapshot);
+
+	UFUNCTION(Client, Reliable)
+	void InitializeVisualComponents();
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable) void ServerDebugLogConnections();
 	void ServerDebugLogConnections_Implementation();

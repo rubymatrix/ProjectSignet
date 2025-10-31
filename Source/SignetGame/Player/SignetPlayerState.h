@@ -7,7 +7,10 @@
 #include "SignetGame/Save/SignetSaveTypes.h"
 #include "SignetPlayerState.generated.h"
 
+class USignetInventoryComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerUpdatedDelegate, ASignetPlayerState*, Player);
+
+class UVisualComponent;
 
 /**
  * 
@@ -60,6 +63,12 @@ protected:
 
 public:
 
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SetRace(const ERace& NewRace);
+	
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SetFace(const EFace& NewFace);
+
 	void ReceivedPlayerProfile();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -79,4 +88,10 @@ private:
 	void DebounceUpdate();
 	void DebouncePersist();
 	void DebounceRecalculateStats();
+
+	FTimerHandle FaceUpdateTimer;
+	FTimerHandle RaceUpdateTimer;
+	void TriggerFaceVisualUpdate();
+	void TriggerRaceVisualUpdate();
+	void ValidateEquipment() const;
 };

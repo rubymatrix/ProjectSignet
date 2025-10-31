@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "AttributeSet.h"
 #include "Blueprint/UserWidget.h"
-#include "PlayerInfo.generated.h"
+#include "SignetPlayerInfoWidget.generated.h"
 
 class ASignetPlayerState;
 struct FGameplayAttribute;
@@ -14,7 +14,7 @@ class USignetAbilitySystemComponent;
 class UTextBlock;
 
 UCLASS()
-class SIGNETGAME_API UPlayerInfo : public UUserWidget
+class SIGNETGAME_API USignetPlayerInfoWidget : public UUserWidget
 {
 	GENERATED_BODY()
 

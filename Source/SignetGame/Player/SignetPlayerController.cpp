@@ -4,10 +4,11 @@
 #include "SignetPlayerController.h"
 
 #include "SignetCheats.h"
+#include "SignetPlayerCharacter.h"
 #include "SignetPlayerState.h"
 #include "Blueprint/UserWidget.h"
-#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "SignetGame/Core/SignetLobbyGameState.h"
+#include "SignetGame/Inventory/SignetInventoryComponent.h"
 #include "SignetGame/Save/SignetSaveSubsystem.h"
 #include "SignetGame/UI/Admin/SGProfileDisplayWidget.h"
 #include "SignetGame/UI/Admin/SGProfileEditorWidget.h"
@@ -72,6 +73,13 @@ void ASignetPlayerController::BeginPlay()
 	}
 }
 
+void ASignetPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	ClientRequestProfileSnapshot();
+}
+
 
 void ASignetPlayerController::ClientRequestProfileSnapshot_Implementation()
 {
@@ -94,7 +102,6 @@ void ASignetPlayerController::ClientRequestProfileSnapshot_Implementation()
 	}
 }
 
-static bool IsEnumValid(ENation) { return true; }
 void ASignetPlayerController::ServerSubmitProfileSnapshot_Implementation(const FSignetProfileSnapshot Snapshot)
 {
 	auto* PS = GetPlayerState<ASignetPlayerState>();
@@ -113,6 +120,50 @@ void ASignetPlayerController::ServerSubmitProfileSnapshot_Implementation(const F
 	PS->Level = Snapshot.Level;
 	PS->CurrentExp = Snapshot.CurrentExp;
 	PS->ReceivedPlayerProfile();
+
+	ClientRequestInventorySnapshot();
+}
+
+void ASignetPlayerController::ClientRequestInventorySnapshot_Implementation()
+{
+	if (const auto* GI = GetGameInstance())
+	{
+		if (const auto* SaveSys = GI->GetSubsystem<USignetSaveSubsystem>())
+		{
+			FSignetSavedInventory InvSnapshot = SaveSys->GetSave()->Inventory;
+			ServerSubmitInventorySnapshot(InvSnapshot);
+		}
+	}
+}
+
+void ASignetPlayerController::ServerSubmitInventorySnapshot_Implementation(const FSignetSavedInventory& Snapshot)
+{
+	const auto P = Cast<ASignetPlayerCharacter>(GetPawn());
+	if (!P)
+	{
+		return;
+	}
+	
+	if (auto* Inv = P->FindComponentByClass<USignetInventoryComponent>())
+	{
+		Inv->LoadFromSave(Snapshot);
+
+		auto PS = GetPlayerState<ASignetPlayerState>();
+		if (!PS) return;
+
+		// Refresh Gear Slots
+		P->RefreshAllSlots();
+
+		// Do it on the clients too
+		InitializeVisualComponents();
+	}
+}
+
+void ASignetPlayerController::InitializeVisualComponents_Implementation()
+{
+	const auto P = Cast<ASignetPlayerCharacter>(GetPawn());
+	if (!P) return;
+	P->RefreshAllSlots();
 }
 
 void ASignetPlayerController::ServerDebugLogConnections_Implementation()

@@ -30,6 +30,8 @@ public:
 	
 	bool GetCharacterParts(const ERace& TargetRace, FCharacterPartsRow& OutRow);
 
+	const FCharacterPartsRow* GetCharacterPartsRow(ERace InRace);
+
 	const FInventoryItem* GetItem(const int32 ItemId);
 
 private:

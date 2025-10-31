@@ -4,6 +4,7 @@
 #include "Blueprint/IUserObjectListEntry.h"
 #include "SignetInventoryRowWidget.generated.h"
 
+class UButton;
 class UImage;
 class UTextBlock;
 class UBorder;
@@ -17,6 +18,9 @@ public:
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 protected:
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> RootButton = nullptr;
 	
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UImage> IconImage = nullptr;

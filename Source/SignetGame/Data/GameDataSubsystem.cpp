@@ -81,6 +81,33 @@ bool UGameDataSubsystem::GetCharacterParts(const ERace& TargetRace, FCharacterPa
 	return false;
 }
 
+const FCharacterPartsRow* UGameDataSubsystem::GetCharacterPartsRow(const ERace InRace)
+{
+	if (!bCharacterPartsLoaded)
+	{
+		UE_LOG(LogSignetGameData, Error, TEXT("Request made to the GameDataSubsystem for %s Character Parts before character parts were loaded."), *Data::GetRowNameFromEnum(InRace).ToString());
+		return nullptr;
+	}
+
+	if (CharacterPartsTable == nullptr)
+	{
+		UE_LOG(LogSignetGameData, Error, TEXT("Request made to the GameDataSubsystem for %s Character Parts, but CharacterPartsTable is NULL"), *Data::GetRowNameFromEnum(InRace).ToString());
+		return nullptr;
+	}
+
+	if (const auto Result = CharacterPartsCache.Find(InRace))
+	{
+		return *Result;
+	}
+
+	if (const auto* Row = CharacterPartsTable->FindRow<FCharacterPartsRow>(Data::GetRowNameFromEnum(InRace), TEXT("PartsRowLookup")))
+	{
+		return Row;
+	}
+
+	return nullptr;
+}
+
 const FInventoryItem* UGameDataSubsystem::GetItem(const int32 ItemId)
 {
 	if (ItemTable == nullptr || ItemCache.IsEmpty()) return nullptr;

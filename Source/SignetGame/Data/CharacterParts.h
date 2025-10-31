@@ -10,6 +10,24 @@
 
 
 USTRUCT(BlueprintType)
+struct SIGNETGAME_API FFaceMesh
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USkeletalMesh> Mesh;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USkeletalMesh> ClipStage1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USkeletalMesh> ClipStage2;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UMaterialInstance> Material;
+};
+
+USTRUCT(BlueprintType)
 struct SIGNETGAME_API FCharacterPartsRow : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -23,26 +41,25 @@ struct SIGNETGAME_API FCharacterPartsRow : public FTableRowBase
 	TSubclassOf<UAnimInstance> AnimInstanceClass;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSoftObjectPtr<USkeletalMesh> RootMesh;
+	TObjectPtr<USkeletalMesh> RootMesh;
 
 	UPROPERTY(EditDefaultsOnly)
-	TMap<EFace, TSoftObjectPtr<USkeletalMesh>> Faces;
+	TMap<EFace, FFaceMesh> Faces;
 
 	UPROPERTY(EditDefaultsOnly)
-	TMap<EGearSlot, TSoftObjectPtr<USkeletalMesh>> SlotDefaults;
+	TMap<EGearSlot, TObjectPtr<USkeletalMesh>> SlotDefaults;
 
 
 // Begin Access Helpers
 
-	FORCEINLINE TSoftObjectPtr<USkeletalMesh> GetFace(const EFace& Face)
+	const FFaceMesh* GetFace(const EFace& Face, const EFaceClipStage ClipStage = EFaceClipStage::None)
 	{
-		const TSoftObjectPtr<USkeletalMesh>* FoundFace = Faces.Find(Face);
-		return FoundFace ? *FoundFace : nullptr;
+		return Faces.Find(Face);
 	}
 
 	FORCEINLINE TSoftObjectPtr<USkeletalMesh> GetDefaultSlot(const EGearSlot& Sot)
 	{
-		const TSoftObjectPtr<USkeletalMesh>* FoundSlot = SlotDefaults.Find(Sot);
+		const TObjectPtr<USkeletalMesh>* FoundSlot = SlotDefaults.Find(Sot);
 		return FoundSlot ? *FoundSlot : nullptr;
 	}
 };

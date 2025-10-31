@@ -5,14 +5,15 @@
 #include "CoreMinimal.h"
 #include "AlsCharacter.h"
 #include "InputActionValue.h"
-#include "SignetCheats.h"
 #include "VisualState.h"
+#include "SignetGame/Data/CharacterParts.h"
+#include "SignetGame/Inventory/InventoryTypes.h"
 #include "SignetPlayerCharacter.generated.h"
 
-
-class USignetAbilitySystemComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
 
+class USignetVisualComponent;
+class USignetAbilitySystemComponent;
 class USignetInventoryComponent;
 class UInventoryComponent;
 class UTargetingComponent;
@@ -20,8 +21,12 @@ class UStatsComponent;
 class USignetCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UGameDataSubsystem;
 
+enum class EGearSlot : uint8;
 struct FInputActionValue;
+struct FInventoryItem;
+struct FCharacterPartsRow;
 
 UCLASS()
 class SIGNETGAME_API ASignetPlayerCharacter : public AAlsCharacter
@@ -70,7 +75,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
 	TObjectPtr<UTargetingComponent> Targeting;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
-	TObjectPtr<USignetInventoryComponent> Inventory;
+	TObjectPtr<USignetInventoryComponent> InventoryComponent;
 
 public:
 
@@ -86,7 +91,10 @@ public:
 	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return Targeting; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE USignetInventoryComponent* GetInventoryComponent() const { return Inventory; }
+	FORCEINLINE USignetInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	USkeletalMeshComponent* GetFaceComponent();
+	USkeletalMeshComponent* GetMeshComponent(const EGearSlot& GearSlot);
 
 protected:
 
@@ -208,5 +216,39 @@ public:
 // Begin Debug Display
 	
 	virtual void DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DisplayInfo, float& Unused, float& VerticalLocation) override;
+
+
+// Begin Mesh Manipulation
+private:
+
+	FTimerHandle VisualUpdateDebounceTimer;
+	
+	ERace CurrentRace = ERace::HumeMale;
+	EFace CurrentFace = EFace::Invalid;
+	int32 CurrentHideParts = 0;
+
+	// Helper Accessors
+	TArray<USkeletalMeshComponent*> GetComponentsToHide();
+	UGameDataSubsystem* GetGameData();
+	const FInventoryItem* FindItemDef(const int ItemID);
+	const FCharacterPartsRow* GetCharacterParts();
+
+public:
+	
+	// Component manipulation
+	UFUNCTION(Exec)
+	void RefreshAllSlots();
+	void ApplyBaseCharacter();
+	void ApplyEquipmentSlot(const EGearSlot InGearSlot);
+
+private:
+	
+	void ApplyDefaultMesh(const EGearSlot InGearSlot, const FCharacterPartsRow* Parts);
+	void ApplyFace(const FCharacterPartsRow* Parts, const EFaceClipStage DesiredClipStage = EFaceClipStage::None);
+	void ApplyMeshHiding();
+
+
+	UFUNCTION()
+	void OnEquipmentChanged(EGearSlot InGearSlot, int32 OldItemID, int32 NewItemID);
 };
 

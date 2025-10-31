@@ -76,6 +76,21 @@ enum class EItemQuality : uint8
 	HQ3
 };
 
+UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class EBodyPart : uint8
+{
+	None  = 0b00000000 UMETA(Hidden),
+	Head  = 0b00000001,
+	Body  = 0b00000010,
+	Hands = 0b00000100,
+	Legs  = 0b00001000,
+	Feet  = 0b00010000
+};
+ENUM_CLASS_FLAGS(EBodyPart)
+
+
+// 0001 1100
+
 USTRUCT(BlueprintType)
 struct SIGNETGAME_API FInventoryItem
 {
@@ -123,14 +138,20 @@ struct SIGNETGAME_API FInventoryItem
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	EFaceClipStage FaceClippingStage = EFaceClipStage::None;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = EHideParts))
+	int32 HiddenPartsMask = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = EHideParts))
+	int32 RemoveSlotsMask = 0;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
-	TWeakObjectPtr<UDataTable> Stats;
+	TObjectPtr<UDataTable> Stats;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<UTexture> Icon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Visual")
-	TSoftObjectPtr<USkeletalMesh> Mesh;
+	FString MeshPath;
 };
 
 
@@ -142,3 +163,16 @@ struct SIGNETGAME_API FItemRow : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FInventoryItem Item;
 };
+
+
+static bool HidesPart(const FInventoryItem* ItemDef, EBodyPart Part)
+{
+	if (!ItemDef) return false;
+
+	if (const EBodyPart Flags = static_cast<EBodyPart>(ItemDef->HiddenPartsMask); EnumHasAnyFlags(Flags, Part))
+	{
+		return true;
+	}
+	
+	return false;
+}
