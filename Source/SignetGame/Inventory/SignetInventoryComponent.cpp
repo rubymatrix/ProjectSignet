@@ -2,6 +2,8 @@
 
 
 #include "SignetInventoryComponent.h"
+
+#include "GameplayTagsManager.h"
 #include "Net/UnrealNetwork.h"
 #include "SignetGame/Data/GameDataSubsystem.h"
 #include "SignetGame/Save/SignetSaveSubsystem.h"
@@ -555,4 +557,168 @@ bool USignetInventoryComponent::TryUnequip_Internal(EGearSlot Slot)
 	OnEquipmentChangedInstance.Broadcast(Slot, OldGuid, FGuid());
 
 	return true;
+}
+
+
+static const TMap<EGearSlot, EBodyPart> GSlotToHidePart =
+{
+	{ EGearSlot::Head,  EBodyPart::Head  },
+	{ EGearSlot::Body,  EBodyPart::Body  },
+	{ EGearSlot::Hands, EBodyPart::Hands },
+	{ EGearSlot::Legs,  EBodyPart::Legs  },
+	{ EGearSlot::Feet,  EBodyPart::Feet  },
+};
+
+static FGameplayTag MakeRaceTag(ERace Race)
+{
+	FName TagName;
+
+	switch (Race)
+	{
+	case ERace::HumeMale:      TagName = TEXT("Race.HumeMale"); break;
+	case ERace::HumeFemale:    TagName = TEXT("Race.HumeFemale"); break;
+	case ERace::ElvaanMale:    TagName = TEXT("Race.ElvaanMale"); break;
+	case ERace::ElvaanFemale:  TagName = TEXT("Race.ElvaanFemale"); break;
+	case ERace::TarutaruMale:  TagName = TEXT("Race.TarutaruMale"); break;
+	case ERace::TarutaruFemale:TagName = TEXT("Race.TarutaruFemale"); break;
+	case ERace::Mithra:        TagName = TEXT("Race.Mithra"); break;
+	case ERace::Galka:         TagName = TEXT("Race.Galka"); break;
+	default:
+		TagName = TEXT("Race.Unknown");
+		break;
+	}
+
+	return UGameplayTagsManager::Get().RequestGameplayTag(TagName);
+}
+
+static FGameplayTag MakeJobTag(EJob Job)
+{
+	FName TagName;
+
+	switch (Job)
+	{
+	case EJob::Warrior:   TagName = TEXT("Job.Warrior"); break;
+	case EJob::Monk:      TagName = TEXT("Job.Monk"); break;
+	case EJob::Thief:     TagName = TEXT("Job.Thief"); break;
+	case EJob::RedMage:   TagName = TEXT("Job.RedMage"); break;
+	case EJob::BlackMage: TagName = TEXT("Job.BlackMage"); break;
+	case EJob::WhiteMage: TagName = TEXT("Job.WhiteMage"); break;
+	default:
+		TagName = TEXT("Job.Unknown");
+		break;
+	}
+
+	return UGameplayTagsManager::Get().RequestGameplayTag(TagName);
+}
+
+void USignetInventoryComponent::ValidateEquipment(const ERace PlayerRace, const EJob PlayerJob)
+{
+	// Must run on server, since we may unequip
+	if (!GetOwner() || !GetOwner()->HasAuthority())
+	{
+		return;
+	}
+
+	const int32 SlotCount = USignetInventoryComponent::SlotCount();
+	if (EquippedItemIDs.Num() != SlotCount)
+	{
+		return;
+	}
+
+	// Build player tags
+	const FGameplayTag PlayerRaceTag = MakeRaceTag(PlayerRace);
+	const FGameplayTag PlayerJobTag  = MakeJobTag(PlayerJob);
+
+	// 1) First pass: collect all "removed slots" from currently equipped items
+	//    (i.e. robes that hide legs/feet, headgear that hides head, etc.)
+	int32 CombinedRemoveMask = 0;
+
+	for (int32 SlotIdx = 0; SlotIdx < SlotCount; ++SlotIdx)
+	{
+		const int32 ItemID = EquippedItemIDs[SlotIdx];
+		if (ItemID == 0)
+		{
+			continue;
+		}
+
+		const FInventoryItem* Def = FindDef(ItemID); // <- implement or route to GameDataSubsystem
+		if (!Def)
+		{
+			continue;
+		}
+
+		CombinedRemoveMask |= Def->RemoveSlotsMask;
+	}
+
+	// 2) Second pass: validate each equipped slot
+	for (int32 SlotIdx = 0; SlotIdx < SlotCount; ++SlotIdx)
+	{
+		const EGearSlot GearSlot = static_cast<EGearSlot>(SlotIdx);
+		const int32     ItemID   = EquippedItemIDs[SlotIdx];
+
+		if (ItemID == 0)
+		{
+			continue;
+		}
+
+		const FInventoryItem* Def = FindDef(ItemID);
+		if (!Def)
+		{
+			// Bad item -> unequip
+			TryUnequip_Internal(GearSlot);
+			continue;
+		}
+
+		bool bShouldUnequip = false;
+
+		// --- (a) Race gate ---
+		if (Def->EquippableRaces.Num() > 0)
+		{
+			if (!Def->EquippableRaces.HasTag(PlayerRaceTag))
+			{
+				bShouldUnequip = true;
+			}
+		}
+
+		// --- (b) Job gate ---
+		if (!bShouldUnequip && Def->EquippableJobs.Num() > 0)
+		{
+			if (!Def->EquippableJobs.HasTag(PlayerJobTag))
+			{
+				bShouldUnequip = true;
+			}
+		}
+
+		// --- (c) Removed-by-other-items gate ---
+		if (!bShouldUnequip)
+		{
+			// Turn the combined mask into enum
+			const EBodyPart RemoveMaskEnum = static_cast<EBodyPart>(CombinedRemoveMask);
+
+			// Which hide-bit corresponds to THIS slot?
+			const EBodyPart* FoundHidePart = GSlotToHidePart.Find(GearSlot);
+			if (FoundHidePart)
+			{
+				// Important: don't auto-unequip the *item that set the mask for its own slot*
+				// Example: a body item that says "HideLegs" shouldn't cause itself (Body) to be unequipped.
+				// So only apply if the hide part is NOT coming from this very item.
+				if (EnumHasAnyFlags(RemoveMaskEnum, *FoundHidePart))
+				{
+					// Check if THIS item is the one that declared this hide
+					const bool bThisItemHidesThisSlot =
+						(Def->RemoveSlotsMask & static_cast<int32>(*FoundHidePart)) != 0;
+
+					if (!bThisItemHidesThisSlot)
+					{
+						bShouldUnequip = true;
+					}
+				}
+			}
+		}
+
+		if (bShouldUnequip)
+		{
+			TryUnequip_Internal(GearSlot);
+		}
+	}
 }

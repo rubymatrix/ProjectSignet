@@ -68,6 +68,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void SetFace(const EFace& NewFace);
+	
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SetJob(const EJob& NewJob);
 
 	void ReceivedPlayerProfile();
 
@@ -93,5 +96,5 @@ private:
 	FTimerHandle RaceUpdateTimer;
 	void TriggerFaceVisualUpdate();
 	void TriggerRaceVisualUpdate();
-	void ValidateEquipment() const;
+	void ValidateEquipment();
 };

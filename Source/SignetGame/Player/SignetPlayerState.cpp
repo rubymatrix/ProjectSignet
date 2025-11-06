@@ -46,6 +46,12 @@ void ASignetPlayerState::SetFace_Implementation(const EFace& NewFace)
 	TriggerFaceVisualUpdate();
 }
 
+void ASignetPlayerState::SetJob_Implementation(const EJob& NewJob)
+{
+	Job = NewJob;
+	DebounceRecalculateStats();
+}
+
 void ASignetPlayerState::ReceivedPlayerProfile()
 {
 	if (HasAuthority())
@@ -71,6 +77,7 @@ void ASignetPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 
 class ASignetPlayerCharacter* ASignetPlayerState::GetSignetPawn()
 {
+	if (!IsValid(GetPawn())) return nullptr;
 	return Cast<ASignetPlayerCharacter>(GetPawn());
 }
 
@@ -187,7 +194,15 @@ void ASignetPlayerState::TriggerRaceVisualUpdate()
 	P->CaptureVisualState(Race, Face);
 }
 
-void ASignetPlayerState::ValidateEquipment() const
+void ASignetPlayerState::ValidateEquipment()
 {
 	// TODO: Make sure equipment is valid for new class
+
+	if (const auto P = GetSignetPawn())
+	{
+		if (const auto Inv = P->GetInventoryComponent())
+		{
+			Inv->ValidateEquipment(Race, Job);
+		}
+	}
 }

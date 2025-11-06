@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "GameplayEffect.h"
 #include "GameplayTagContainer.h"
+#include "SignetGame/Data/AudioTypes.h"
 #include "InventoryTypes.generated.h"
 
 UENUM(BlueprintType)
@@ -48,15 +50,6 @@ enum class EEquipmentType : uint8
 	Ammo,
 	Armor,
 	Accessory
-};
-
-UENUM(BlueprintType)
-enum class ESoundSlot : uint8
-{
-	Default,
-	Variant1,
-	Variant2,
-	Variant3
 };
 
 UENUM(BlueprintType)
@@ -129,29 +122,38 @@ struct SIGNETGAME_API FInventoryItem
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
 	EGearSlot GearSlot = EGearSlot::None;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
+	FGameplayTagContainer EquippableRaces;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
+	FGameplayTagContainer EquippableJobs;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
 	FGameplayTag WeaponSkill = FGameplayTag::EmptyTag;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	ESoundSlot ImpactSoundType = ESoundSlot::Default;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
+	TSubclassOf<UGameplayEffect> EffectClass;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category ="Masking")
 	EFaceClipStage FaceClippingStage = EFaceClipStage::None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = EHideParts))
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = EHideParts), Category = "Masking")
 	int32 HiddenPartsMask = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = EHideParts))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Bitmask, BitmaskEnum = EHideParts), Category = "Masking")
 	int32 RemoveSlotsMask = 0;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
-	TObjectPtr<UDataTable> Stats;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<UTexture> Icon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Visual")
 	FString MeshPath;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound/FX")
+	EWeaponSoundSlot WeaponSoundType = EWeaponSoundSlot::Slot1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound/FX")
+	EArmorSoundClass ArmorSoundClass = EArmorSoundClass::Cloth;
 };
 
 

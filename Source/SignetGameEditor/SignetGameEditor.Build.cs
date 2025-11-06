@@ -20,7 +20,8 @@ public class SignetGameEditor : ModuleRules
 			"Projects", "DeveloperSettings", "DeveloperToolSettings",
 			"Slate", "SlateCore", "InputCore", "ToolMenus", "EditorStyle",
 			"DataValidation", "MessageLog",
-			"CollectionManager", "SourceControl",
+			"CollectionManager", "SourceControl", "Blutility",
+			"Slate", "SlateCore", "UMG"
 		]);
 		
 		DynamicallyLoadedModuleNames.AddRange(

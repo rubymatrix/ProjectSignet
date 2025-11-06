@@ -151,6 +151,7 @@ void ASignetPlayerController::ServerSubmitInventorySnapshot_Implementation(const
 		auto PS = GetPlayerState<ASignetPlayerState>();
 		if (!PS) return;
 
+		Inv->ValidateEquipment(PS->Race, PS->Job);
 		P->CaptureVisualState(PS->Race, PS->Face);
 	}
 }
@@ -175,6 +176,19 @@ void ASignetPlayerController::ServerDebugLogConnections_Implementation()
 			UE_LOG(LogSignet, Log, TEXT("Player: %s - Lv %i %s"), *LobbyPlayer->PlayerName, LobbyPlayer->Level, *UEnum::GetValueAsString(LobbyPlayer->Job));
 		}
 	}
+}
+
+void ASignetPlayerController::ChangeJob_Implementation(const EJob NewJob)
+{
+	const auto W = GetWorld();
+	if (!W) return;
+	const auto GI = W->GetGameInstance();
+	if (!GI) return;
+	const auto Save = GI->GetSubsystem<USignetSaveSubsystem>();
+	if (!Save) return;
+
+	// Apply it to our local save
+	Save->SetSelectedJob(NewJob);
 }
 
 void ASignetPlayerController::DoServerTravelAll(const FName& MapAssetPath, const FString& Options)

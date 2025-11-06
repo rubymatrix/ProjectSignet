@@ -32,7 +32,10 @@ const TArray<TArray<uint8>> UGrades::JobGrades = {
 
 const TArray<TArray<uint8>> UGrades::RaceGrades = {
     { {4,4,4,4,4,4,4,4,4} },   // Hume
+    { {4,4,4,4,4,4,4,4,4} },   // Hume
     { {3,5,2,5,3,6,6,2,4} },   // Elvaan
+    { {3,5,2,5,3,6,6,2,4} },   // Elvaan
+    { {7,1,6,4,5,3,1,5,4} },   // Tarutaru
     { {7,1,6,4,5,3,1,5,4} },   // Tarutaru
     { {4,4,5,1,5,2,4,5,6} },   // Mithra
     { {1,7,3,4,1,5,5,4,6} }    // Galka

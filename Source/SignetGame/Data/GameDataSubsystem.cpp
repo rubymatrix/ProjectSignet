@@ -33,6 +33,11 @@ void UGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ItemTableRef is null (check INI)."));
 	}
+
+	if (!WeaponSoundTableRef.IsNull())
+	{
+		WeaponSoundTable = WeaponSoundTableRef.LoadSynchronous();
+	}
 	
 
 	// Hydrate the item cache
@@ -112,4 +117,9 @@ const FInventoryItem* UGameDataSubsystem::GetItem(const int32 ItemId)
 {
 	if (ItemTable == nullptr || ItemCache.IsEmpty()) return nullptr;
 	return ItemCache.Find(ItemId);
+}
+
+const FWeaponSoundBankTableRow* UGameDataSubsystem::GetWeaponSound(const FGameplayTag& WeaponTypeTag)
+{
+	return nullptr;
 }

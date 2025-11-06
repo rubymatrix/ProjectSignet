@@ -8,6 +8,8 @@
 #include "Components/ActorComponent.h"
 #include "SignetInventoryComponent.generated.h"
 
+enum class ERace : uint8;
+enum class EJob : uint8;
 struct FSignetSavedInventory;
 class USignetItemDataSubsystem;
 
@@ -91,7 +93,7 @@ public:
 	static constexpr int32 SlotCount() { return static_cast<int32>(EGearSlot::Feet) + 1; }
 	void CaptureToSave(FSignetSavedInventory& Out) const;
 	void LoadFromSave(const FSignetSavedInventory& In);
-
+	void ValidateEquipment(ERace PlayerRace, EJob PlayerJob);
 
 private:
 

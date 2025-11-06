@@ -23,7 +23,10 @@ public:
 	TSoftObjectPtr<UDataTable> CharacterPartsTableRef;
 
 	UPROPERTY(Config, EditDefaultsOnly, Category="Game Data|Tables")
-	TSoftObjectPtr<UDataTable> ItemTableRef;
+	TSoftObjectPtr<UDataTable> ItemTableRef;	
+	
+	UPROPERTY(Config, EditDefaultsOnly, Category="Game Data|Tables")
+	TSoftObjectPtr<UDataTable> WeaponSoundTableRef;
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
@@ -33,6 +36,8 @@ public:
 	const FCharacterPartsRow* GetCharacterPartsRow(ERace InRace);
 
 	const FInventoryItem* GetItem(const int32 ItemId);
+
+	const FWeaponSoundBankTableRow* GetWeaponSound(const FGameplayTag& WeaponTypeTag);
 
 private:
 
@@ -54,4 +59,8 @@ private:
 	TObjectPtr<UDataTable> ItemTable = nullptr;
 	TMap<int, FInventoryItem> ItemCache;
 	
+// Begin Weapon Sound Table
+
+	UPROPERTY(Transient)
+	TObjectPtr<UDataTable> WeaponSoundTable = nullptr;
 };

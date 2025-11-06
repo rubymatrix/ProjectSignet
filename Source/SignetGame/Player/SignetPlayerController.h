@@ -55,6 +55,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable) void ServerDebugLogConnections();
 	void ServerDebugLogConnections_Implementation();
+	
+	UFUNCTION(BlueprintCallable, Client, Reliable)
+	void ChangeJob(const EJob NewJob);
 
 private:
 

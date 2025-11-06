@@ -444,12 +444,11 @@ void ASignetPlayerCharacter::ApplyBaseCharacter()
 {
 	const auto GameData = GetGameData();
 	const auto MeshComp = GetMesh();
-	const auto PS = GetPlayerState<ASignetPlayerState>();
 
-	if (!GameData || !MeshComp || !PS) return;
+	if (!GameData || !MeshComp) return;
 
-	CurrentRace = PS->Race;
-	CurrentFace = PS->Face;
+	CurrentRace = VisualState.Race;
+	CurrentFace = VisualState.Face;
 
 	if (const auto Parts = GetCharacterParts())
 	{

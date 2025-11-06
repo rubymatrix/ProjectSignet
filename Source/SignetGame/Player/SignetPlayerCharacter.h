@@ -247,6 +247,12 @@ public:
 	void UpdateFace(const EFace NewFace);
 
 	void CaptureVisualState(const ERace NewRace, const EFace NewFace);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE ERace GetCurrentRace() const { return VisualState.Race; }
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE EFace GetCurrentFace() const { return VisualState.Face; }
 	
 
 private:
