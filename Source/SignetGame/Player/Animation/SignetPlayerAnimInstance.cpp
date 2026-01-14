@@ -4,6 +4,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SignetGame/Abilities/TagCache.h"
 #include "SignetGame/Player/SignetPlayerCharacter.h"
+#include "SignetGame/Inventory/SignetInventoryComponent.h"
+#include "SignetGame/Player/Components/TargetingComponent.h"
 
 USignetPlayerAnimInstance::USignetPlayerAnimInstance()
 {
@@ -199,13 +201,24 @@ void USignetPlayerAnimInstance::DetermineCastingTag()
 
 void USignetPlayerAnimInstance::DetermineWeaponTags()
 {
-	// TODO: Implement after Inventory Component
+	if (!SignetCharacter.IsValid())
+	{
+		return;
+	}
+
+	if (const auto Inventory = SignetCharacter->GetInventoryComponent())
+	{
+		MainWeaponSkillTag = Inventory->GetEquippedWeaponSkill(EGearSlot::Main);
+		SubWeaponSkillTag = Inventory->GetEquippedWeaponSkill(EGearSlot::Sub);
+		RangedWeaponSkillTag = Inventory->GetEquippedWeaponSkill(EGearSlot::Ranged);
+	}
 }
 
 FGameplayTag USignetPlayerAnimInstance::DetermineDirectionTag()
 {
 	if (!SignetCharacter.IsValid() || !SignetCharacter->GetMovementComponent())
 	{
+		OrientationWarpAngle = 0.f;
 		return FTagCache::Get().Movement.Forward;
 	}
 
@@ -215,12 +228,24 @@ FGameplayTag USignetPlayerAnimInstance::DetermineDirectionTag()
 	V.Z = 0.f;
 	if (V.Size() < MinSpeed)
 	{
+		OrientationWarpAngle = 0.f;
 		return FTagCache::Get().Movement.Forward;
 	}
 
 	// Normalize
 	const FVector Dir = V.GetSafeNormal2D();
-	FVector Forward   = SignetCharacter->GetActorForwardVector();
+	
+	FVector Forward = SignetCharacter->GetActorForwardVector();
+
+	// If we have a target, the orientation should be based on the direction to the target
+	if (const UTargetingComponent* TargetingComponent = SignetCharacter->GetTargetingComponent())
+	{
+		if (const AActor* Target = TargetingComponent->GetLockedOnTargetActor())
+		{
+			Forward = Target->GetActorLocation() - SignetCharacter->GetActorLocation();
+		}
+	}
+
 	Forward.Z = 0.f;
 	Forward.Normalize();
 
@@ -235,20 +260,25 @@ FGameplayTag USignetPlayerAnimInstance::DetermineDirectionTag()
 	// Map angle ranges to cardinal tags
 	if (AngleDeg >= -46.f && AngleDeg <= 46.f)
 	{
+		OrientationWarpAngle = AngleDeg;
 		return FTagCache::Get().Movement.Forward;
 	}
 	if (AngleDeg > 46.f && AngleDeg < 134.f)
 	{
+		OrientationWarpAngle = AngleDeg - 90.f;
 		return FTagCache::Get().Movement.Right;
 	}
 	if (AngleDeg >= 133.f || AngleDeg <= -133.f)
 	{
+		OrientationWarpAngle = AngleDeg > 0.f ? AngleDeg - 180.f : AngleDeg + 180.f;
 		return FTagCache::Get().Movement.Backward;
 	}
 	if (AngleDeg < -45.f && AngleDeg > -135.f)
 	{
+		OrientationWarpAngle = AngleDeg + 90.f;
 		return FTagCache::Get().Movement.Left;
 	}
 
+	OrientationWarpAngle = AngleDeg;
 	return FTagCache::Get().Movement.Forward;
 }

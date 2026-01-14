@@ -88,9 +88,11 @@ private:
 	FTimerHandle PersistDebounceTimer;
 	FTimerHandle UpdateDebounceTimer;
 	FTimerHandle StatsDebounceTimer;
+	FTimerHandle ValidateEquipmentDebounceTimer;
 	void DebounceUpdate();
 	void DebouncePersist();
 	void DebounceRecalculateStats();
+	void DebounceValidateEquipment();
 
 	FTimerHandle FaceUpdateTimer;
 	FTimerHandle RaceUpdateTimer;

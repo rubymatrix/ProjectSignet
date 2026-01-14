@@ -3,6 +3,7 @@
 #include "StateAbility.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
+#include "SignetGame/Player/Components/CharacterDataComponent.h"
 
 UStateAbility::UStateAbility()
 {
@@ -113,10 +114,13 @@ UAnimMontage* UStateAbility::GetAnimMontage() const
 	if (!CurrentActorInfo || !CurrentActorInfo->AbilitySystemComponent.IsValid())
 		return nullptr;
 
-	// if (const auto ActionComp = CurrentActorInfo->AvatarActor->FindComponentByClass<UActionComponent>())
-	// {
-	// 	return ActionComp->GetMontageForAction(ActionType);
-	// }
+	if (const auto Cdc = CurrentActorInfo->AvatarActor->FindComponentByClass<UCharacterDataComponent>())
+	{
+		if (const auto ActionData = Cdc->GetActionMontage(ActionType))
+		{
+			return ActionData;
+		}
+	}
 
 	return nullptr;
 }

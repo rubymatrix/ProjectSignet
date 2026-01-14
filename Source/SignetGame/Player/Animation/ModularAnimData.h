@@ -40,6 +40,13 @@ struct SIGNETGAME_API FWeaponOverlay
 	FLayeredSequence Walking;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
 	FLayeredSequence Running;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
+	FLayeredSequence MoveLeft;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
+	FLayeredSequence MoveRight;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category = "State")
+	FLayeredSequence MoveBack;
 };
 
 USTRUCT(BlueprintType)

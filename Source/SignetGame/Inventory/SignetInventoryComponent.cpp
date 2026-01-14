@@ -4,12 +4,18 @@
 #include "SignetInventoryComponent.h"
 
 #include "GameplayTagsManager.h"
+#include "GameFramework/Pawn.h"
 #include "Net/UnrealNetwork.h"
+#include "SignetGame/Abilities/TagCache.h"
 #include "SignetGame/Data/GameDataSubsystem.h"
+#include "SignetGame/Player/SignetPlayerState.h"
 #include "SignetGame/Save/SignetSaveSubsystem.h"
 
 
 class USignetSaveSubsystem;
+
+static FGameplayTag MakeRaceTag(ERace Race);
+static FGameplayTag MakeJobTag(EJob Job);
 
 void FInvList::PreReplicatedRemove(const TArrayView<int32>& Removed, int32)
 {
@@ -139,6 +145,28 @@ FGuid USignetInventoryComponent::GetEquippedInstance(EGearSlot Slot) const
 {
 	const int32 I = SlotToIndex(Slot);
 	return EquippedInstanceIds.IsValidIndex(I) ? EquippedInstanceIds[I] : FGuid();
+}
+
+FGameplayTag USignetInventoryComponent::GetEquippedWeaponSkill(EGearSlot Slot) const
+{
+	const int32 ItemID = GetEquippedItemID(Slot);
+	if (ItemID == 0)
+	{
+		return FTagCache::Get().Skill.None;
+	}
+
+	auto KVP = Slot == EGearSlot::Main ? CachedMainSkill : CachedOffSkill;
+
+	if (KVP.Key == ItemID) return KVP.Value;
+
+	if (const FInventoryItem* Def = FindDef(ItemID))
+	{
+		KVP.Key = ItemID;
+		KVP.Value = Def->WeaponSkill;
+		return Def->WeaponSkill;
+	}
+
+	return FTagCache::Get().Skill.None;
 }
 
 bool USignetInventoryComponent::IsEquipped(const FGuid& InstanceId) const
@@ -491,6 +519,44 @@ bool USignetInventoryComponent::TryEquip_Internal(EGearSlot Slot, int32 ItemID, 
 	const FInventoryItem* Def = FindDef(ItemID);
 	if (!Def) return false;
 	if (!(Def->ItemType == EItemType::Equipment && Def->GearSlot == Slot)) return false;
+
+	if (Def->EquippableRaces.Num() > 0 || Def->EquippableJobs.Num() > 0)
+	{
+		const AActor* Owner = GetOwner();
+		const ASignetPlayerState* PlayerState = nullptr;
+		if (const APawn* PawnOwner = Cast<APawn>(Owner))
+		{
+			PlayerState = PawnOwner->GetPlayerState<ASignetPlayerState>();
+		}
+		else
+		{
+			PlayerState = Cast<ASignetPlayerState>(Owner);
+		}
+
+		if (!PlayerState)
+		{
+			return false;
+		}
+
+		const FGameplayTag PlayerRaceTag = MakeRaceTag(PlayerState->Race);
+		const FGameplayTag PlayerJobTag = MakeJobTag(PlayerState->Job);
+
+		if (Def->EquippableRaces.Num() > 0)
+		{
+			if (!Def->EquippableRaces.HasTag(PlayerRaceTag))
+			{
+				return false;
+			}
+		}
+
+		if (Def->EquippableJobs.Num() > 0)
+		{
+			if (!Def->EquippableJobs.HasTag(PlayerJobTag))
+			{
+				return false;
+			}
+		}
+	}
 	
 	if (!InstanceId.IsValid())
 	{

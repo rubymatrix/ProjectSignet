@@ -1,13 +1,17 @@
 ﻿// Copyright Red Lotus Games, All Rights Reserved.
 
 #include "SignetPlayerCharacter.h"
+#include "Components/SignetMovementComponent.h"
+#include "AlsAnimationInstance.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "SignetPlayerState.h"
-#include "AnimNodes/AnimNode_RandomPlayer.h"
+#include "Components/CharacterAudioComponent.h"
+#include "Components/CharacterDataComponent.h"
 #include "Components/SignetCameraComponent.h"
 #include "Components/StatsComponent.h"
 #include "Components/TargetingComponent.h"
+#include "Components/TargetableInterface.h"
 #include "Engine/AssetManager.h"
 #include "Utility/AlsVector.h"
 #include "Net/UnrealNetwork.h"
@@ -18,6 +22,12 @@
 #include "SignetGame/Util/Logging.h"
 #include "SignetGame/Util/Stats.h"
 #include "SignetGame/Data/GameDataSubsystem.h"
+#include "SignetGame/Player/Components/CharacterDataComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "SignetGame/Combat/CombatInterface.h"
+#include "SignetGame/Combat/CombatTypes.h"
+#include "SignetGame/Abilities/State/GA_Attack.h"
+#include "SignetGame/Combat/Components/CameraShakeComponent.h"
 
 
 static TArray VisualSlots = { EGearSlot::Main, EGearSlot::Sub, EGearSlot::Head, EGearSlot::Body, EGearSlot::Hands, EGearSlot::Legs, EGearSlot::Feet };
@@ -57,7 +67,9 @@ USkeletalMeshComponent* ASignetPlayerCharacter::GetMeshComponent(const EGearSlot
 }
 
 ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectInitializer)
-: Super(ObjectInitializer.SetDefaultSubobjectClass<USignetAbilitySystemComponent>(TEXT("AbilitySystemComponent")))
+: Super(ObjectInitializer
+	.SetDefaultSubobjectClass<USignetAbilitySystemComponent>(TEXT("AbilitySystemComponent"))
+	.SetDefaultSubobjectClass<USignetMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// Initialize the camera system
 	Camera = CreateDefaultSubobject<USignetCameraComponent>(TEXT("Camera"));
@@ -92,7 +104,9 @@ ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectI
 	Stats = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComp"));
 	Targeting = CreateDefaultSubobject<UTargetingComponent>(TEXT("TargetingComp"));
 	InventoryComponent = CreateDefaultSubobject<USignetInventoryComponent>(TEXT("InventoryComp"));
-	
+	CharacterData = CreateDefaultSubobject<UCharacterDataComponent>(TEXT("CharacterDataComp"));
+	CharacterAudio = CreateDefaultSubobject<UCharacterAudioComponent>(TEXT("CharacterAudioComp"));
+	CameraShakeComp = CreateDefaultSubobject<UCameraShakeComponent>(TEXT("CameraShakeComp"));
 }
 
 void ASignetPlayerCharacter::NotifyControllerChanged()
@@ -214,6 +228,11 @@ void ASignetPlayerCharacter::BeginPlay()
 	{
 		InventoryComponent->OnEquipmentChanged.AddDynamic(this, &ASignetPlayerCharacter::OnEquipmentChanged);
 	}
+
+	const auto ASC = GetAbilitySystemComponent();
+	if (!ASC) return;
+
+	// ASC->AbilityFailedCallbacks.AddLambda([&]())
 }
 
 void ASignetPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -231,12 +250,22 @@ void ASignetPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInput->BindAction(ToggleRunWalkAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnToggleRunWalk);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnJump);
 		EnhancedInput->BindAction(JumpAction, ETriggerEvent::Canceled, this, &ThisClass::Input_OnJump);
+		EnhancedInput->BindAction(SitAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnSit);
+		EnhancedInput->BindAction(HealAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnHeal);
+		EnhancedInput->BindAction(EmoteAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnEmotePressed);
+		EnhancedInput->BindAction(EmoteAction, ETriggerEvent::Canceled, this, &ThisClass::Input_OnEmoteReleased);
+		EnhancedInput->BindAction(AcceptAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnAccept);
+		EnhancedInput->BindAction(CancelAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnCancel);
+		EnhancedInput->BindAction(MenuAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnMenu);
+		EnhancedInput->BindAction(TabTargetAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnTabTarget);
+		EnhancedInput->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnZoom);
+		EnhancedInput->BindAction(NextTargetAction, ETriggerEvent::Triggered, this, &ThisClass::Input_OnNextTarget);
 	}
 }
 
 void ASignetPlayerCharacter::CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult)
 {
-	if (Camera->IsActive())
+	if (Camera != nullptr && Camera->IsActive())
 	{
 		Camera->GetViewInfo(OutResult);
 		return;
@@ -250,9 +279,15 @@ void ASignetPlayerCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+void ASignetPlayerCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+}
+
 void ASignetPlayerCharacter::Input_OnLookMouse(const FInputActionValue& ActionValue)
 {
 	const auto Value = ActionValue.Get<FVector2D>();
+
 	AddControllerPitchInput(Value.Y * LookUpMouseSensitivity);
 	AddControllerYawInput(Value.X * LookRightMouseSensitivity);
 }
@@ -260,24 +295,52 @@ void ASignetPlayerCharacter::Input_OnLookMouse(const FInputActionValue& ActionVa
 void ASignetPlayerCharacter::Input_OnLook(const FInputActionValue& ActionValue)
 {
 	const auto Value = ActionValue.Get<FVector2D>();
+
 	AddControllerPitchInput(Value.Y * LookUpRate);
 	AddControllerYawInput(Value.X * LookRightRate);
 }
 
 void ASignetPlayerCharacter::Input_OnMove(const FInputActionValue& ActionValue)
 {
-	const auto Value = UAlsVector::ClampMagnitude012D(ActionValue.Get<FVector2D>());
-	auto ViewRotation = GetViewState().Rotation;
-
-	if (IsValid(GetController()))
+	const FVector2D Value = UAlsVector::ClampMagnitude012D(ActionValue.Get<FVector2D>());
+	if (Value.IsNearlyZero())
 	{
-		FVector ViewLocation;
-		GetController()->GetPlayerViewPoint(ViewLocation, ViewRotation);
+		return;
 	}
 
-	const auto ForwardDirection = UAlsVector::AngleToDirectionXY(UE_REAL_TO_FLOAT(ViewRotation.Yaw));
-	const auto RightDirection = UAlsVector::PerpendicularCounterClockwiseXY(ForwardDirection);
+	// if (ActionComp && ActionComp->IsResting())
+	// {
+	// 	ActionComp->StopRest();
+	// 	return;
+	// }
+	//
+	// if (ActionComp && ActionComp->IsSitting())
+	// {
+	// 	ActionComp->StopSit();
+	// 	return;
+	// }
 
+	// Base forward direction from view
+	const float Yaw = UE_REAL_TO_FLOAT(GetViewState().Rotation.Yaw);
+
+	// If locked on and allowed to control rotation, override the yaw to face the target
+	float AdjustedYaw = Yaw;
+	if (Targeting && Targeting->bAllowControlRotation)
+	{
+		const auto TargetActor = Targeting->GetLockedOnTargetActor();
+		if (TargetActor)
+		{
+			const FVector DirectionToTarget = (TargetActor->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+			const FRotator TargetRotation = DirectionToTarget.Rotation();
+			AdjustedYaw = TargetRotation.Yaw;
+		}
+	}
+
+	// Recalculate forward/right with the offset
+	const FVector ForwardDirection = UAlsVector::AngleToDirectionXY(AdjustedYaw);
+	const FVector RightDirection = UAlsVector::PerpendicularCounterClockwiseXY(ForwardDirection);
+
+	// Apply input relative to the rotated basis
 	AddMovementInput(ForwardDirection * Value.Y + RightDirection * Value.X);
 }
 
@@ -304,10 +367,15 @@ void ASignetPlayerCharacter::Input_OnJump(const FInputActionValue& ActionValue)
 
 void ASignetPlayerCharacter::Input_OnSit(const FInputActionValue& ActionValue)
 {
+	
 }
 
 void ASignetPlayerCharacter::Input_OnHeal(const FInputActionValue& ActionValue)
 {
+	if (Targeting && Targeting->GetTargetLockedStatus())
+	{
+		Targeting->bAllowControlRotation = !Targeting->bAllowControlRotation;
+	}
 }
 
 void ASignetPlayerCharacter::Input_OnEmotePressed(const FInputActionValue& ActionValue)
@@ -320,6 +388,29 @@ void ASignetPlayerCharacter::Input_OnEmoteReleased(const FInputActionValue& Acti
 
 void ASignetPlayerCharacter::Input_OnAccept(const FInputActionValue& ActionValue)
 {
+	if (!ActionValue.Get<bool>())
+	{
+		return;
+	}
+
+	const auto Asc = GetSignetAsc();
+	if (!Asc)
+	{
+		return;
+	}
+
+	if (Asc->IsInState(FTagCache::Get().State.Idle))
+	{
+		FGameplayTagContainer AbilityTags;
+		AbilityTags.AddTag(FTagCache::Get().Ability.Engage);
+		Asc->TryActivateAbilitiesByTag(AbilityTags);
+	}
+	else if (Asc->IsInState(FTagCache::Get().State.Engaged))
+	{
+		FGameplayTagContainer AbilityTags;
+		AbilityTags.AddTag(FTagCache::Get().Ability.Disengage);
+		Asc->TryActivateAbilitiesByTag(AbilityTags);
+	}
 }
 
 void ASignetPlayerCharacter::Input_OnCancel(const FInputActionValue& ActionValue)
@@ -327,6 +418,40 @@ void ASignetPlayerCharacter::Input_OnCancel(const FInputActionValue& ActionValue
 }
 
 void ASignetPlayerCharacter::Input_OnMenu(const FInputActionValue& ActionValue)
+{
+}
+
+void ASignetPlayerCharacter::Input_OnTabTarget(const FInputActionValue& ActionValue)
+{
+	if (UTargetingComponent* TargetingComp = GetTargetingComponent())
+	{
+		if (TargetingComp->GetTargetLockedStatus())
+		{
+			float AxisValue = 1.0f;
+			if (APlayerController* PC = Cast<APlayerController>(GetController()))
+			{
+				if (PC->IsInputKeyDown(EKeys::LeftShift) || PC->IsInputKeyDown(EKeys::RightShift))
+				{
+					AxisValue = -1.0f;
+				}
+			}
+			
+			TargetingComp->TargetActorWithAxisInput(AxisValue);
+			return;
+		}
+
+		TargetingComp->TargetActor();
+	}
+}
+
+void ASignetPlayerCharacter::Input_OnZoom(const FInputActionValue& ActionValue)
+{
+	// Zoom logic can be added here. ALS handles FOV via curves, 
+	// but we could also modify camera distance if we have access to it.
+	// For now, let's just provide the hook as required.
+}
+
+void ASignetPlayerCharacter::Input_OnNextTarget(const FInputActionValue& ActionValue)
 {
 }
 
@@ -443,7 +568,7 @@ static FCharacterFace GetFaceMesh(const FCharacterPartsRow* Parts, const EFace F
 void ASignetPlayerCharacter::ApplyBaseCharacter()
 {
 	const auto GameData = GetGameData();
-	const auto MeshComp = GetMesh();
+	USkeletalMeshComponent* MeshComp = GetMesh();
 
 	if (!GameData || !MeshComp) return;
 
@@ -454,8 +579,12 @@ void ASignetPlayerCharacter::ApplyBaseCharacter()
 	{
 		if (const auto NewMesh = Parts->RootMesh)
 		{
-			GetMesh()->SetSkeletalMesh(NewMesh);
-			GetMesh()->SetAnimInstanceClass(Parts->AnimInstanceClass);
+			MeshComp->SetSkeletalMesh(NewMesh);
+			if (Parts->AnimInstanceClass)
+			{
+				MeshComp->SetAnimInstanceClass(Parts->AnimInstanceClass);
+			}
+			AnimationInstance = Cast<UAlsAnimationInstance>(MeshComp->GetAnimInstance());
 		}
 		else
 		{
@@ -570,6 +699,44 @@ void ASignetPlayerCharacter::ApplyEquipmentSlot(const EGearSlot InGearSlot)
 				bMeshApplied = true;
 			}
 		}
+
+		// Handle dual wielding/offhand mesh from main hand item
+		if (InGearSlot == EGearSlot::Main)
+		{
+			if (const auto OffhandMeshPath = ItemDef->OffhandMeshPath; !OffhandMeshPath.IsEmpty())
+			{
+				if (const auto NewMesh = LoadMeshFromPathToken(CurrentRace, OffhandMeshPath))
+				{
+					if (SubMesh)
+					{
+						SubMesh->SetSkeletalMesh(NewMesh);
+						SubMesh->SetVisibility(true);
+					}
+				}
+			}
+			else
+			{
+				// If we are equipping a main hand item without an offhand mesh, 
+				// we should ensure any existing mesh on SubMesh that might have come from a previous main hand item is cleared,
+				// BUT only if there isn't actually an item equipped in the Sub slot.
+				const auto SubItemID = InventoryComponent->GetEquippedItemID(EGearSlot::Sub);
+				if (SubItemID == 0 && SubMesh)
+				{
+					SubMesh->SetSkeletalMesh(nullptr);
+					SubMesh->SetVisibility(false);
+				}
+			}
+		}
+	}
+	else if (InGearSlot == EGearSlot::Main)
+	{
+		// If we are unequipping the main hand, clear the offhand mesh too if no item is in Sub slot
+		const auto SubItemID = InventoryComponent->GetEquippedItemID(EGearSlot::Sub);
+		if (SubItemID == 0 && SubMesh)
+		{
+			SubMesh->SetSkeletalMesh(nullptr);
+			SubMesh->SetVisibility(false);
+		}
 	}
 
 	if (!bMeshApplied) // Try to apply a fallback mesh
@@ -596,6 +763,14 @@ void ASignetPlayerCharacter::UpdateFace(const EFace NewFace)
 	ApplyEquipmentSlot(EGearSlot::Head);
 }
 
+void ASignetPlayerCharacter::PerformAttack()
+{
+	if (USignetAbilitySystemComponent* SignetASC = GetSignetAsc())
+	{
+		SignetASC->TryActivateAbilityByClass(UGA_Attack::StaticClass(), true);
+	}
+}
+
 void ASignetPlayerCharacter::CaptureVisualState(const ERace NewRace, const EFace NewFace)
 {
 	const auto Inv = InventoryComponent;
@@ -617,6 +792,141 @@ void ASignetPlayerCharacter::CaptureVisualState(const ERace NewRace, const EFace
 	{
 		RefreshAllSlots();
 	}
+}
+
+float ASignetPlayerCharacter::GetMoveSpeedMultiplier() const
+{
+	if (const auto Asc = GetSignetAsc())
+	{
+		bool bFound;
+		const float MoveSpeed = Asc->GetGameplayAttributeValue(USignetPrimaryAttributeSet::GetMoveSpeedAttribute(), bFound);
+		if (bFound)
+		{
+			return MoveSpeed;
+		}
+	}
+	return 1.f;
+}
+
+float ASignetPlayerCharacter::GetHealth()
+{
+	return 0.0f;
+}
+
+float ASignetPlayerCharacter::GetMaxHealth()
+{
+	return 0.0f;
+}
+
+float ASignetPlayerCharacter::GetPower()
+{
+	return 0.0f;
+}
+
+float ASignetPlayerCharacter::GetMaxPower()
+{
+	return 0.0f;
+}
+
+float ASignetPlayerCharacter::GetTP()
+{
+	return 0.0f;
+}
+
+void ASignetPlayerCharacter::PlayHitReaction()
+{
+}
+
+void ASignetPlayerCharacter::HitFlash()
+{
+}
+
+void ASignetPlayerCharacter::PlayVocalization(const EVocalizationType VoiceType)
+{
+	if (const auto DataComp = FindComponentByClass<UCharacterDataComponent>())
+	{
+		if (USoundBase* Sound = DataComp->GetVocalization(VoiceType))
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), Sound, GetActorLocation());
+		}
+	}
+}
+
+void ASignetPlayerCharacter::PlayWeaponSwingAtLocation(const FVector& Location)
+{
+}
+
+void ASignetPlayerCharacter::PlayImpactSoundAtLocation(const FVector& Location)
+{
+}
+
+void ASignetPlayerCharacter::PlayWeaponWhoosh()
+{
+	if (const auto DataComp = FindComponentByClass<UCharacterDataComponent>())
+	{
+		FAttackResult Result;
+		if (GetCurrentAttackResult(Result))
+		{
+			if (USoundBase* Sound = DataComp->GetWeaponWhooshSound(Result.AttackDirection))
+			{
+				PlayWeaponSwingAtLocation(GetActorLocation()); // Fallback/Old method if needed
+				UGameplayStatics::PlaySoundAtLocation(this, Sound, GetActorLocation());
+			}
+		}
+	}
+}
+
+void ASignetPlayerCharacter::PlayWeaponImpact()
+{
+	FAttackResult Result;
+	if (GetCurrentAttackResult(Result))
+	{
+		if (!Result.bIsHit) return;
+
+		if (const auto DataComp = FindComponentByClass<UCharacterDataComponent>())
+		{
+			const auto Sound = DataComp->GetWeaponImpactSound(Result);
+			if (!Sound) return;
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), Sound, GetActorLocation());
+		}
+	}
+}
+
+void ASignetPlayerCharacter::PushAttackResults(const TArray<FAttackResult>& Results)
+{
+	AttackResultQueue = Results;
+	CurrentResultIndex = -1;
+}
+
+void ASignetPlayerCharacter::AdvanceAttackResult()
+{
+	CurrentResultIndex++;
+}
+
+bool ASignetPlayerCharacter::GetCurrentAttackResult(FAttackResult& OutResult)
+{
+	if (AttackResultQueue.IsValidIndex(CurrentResultIndex))
+	{
+		OutResult = AttackResultQueue[CurrentResultIndex];
+		return true;
+	}
+	return false;
+}
+
+void ASignetPlayerCharacter::ClearAttackResults()
+{
+	AttackResultQueue.Empty();
+	CurrentResultIndex = -1;
+}
+
+void ASignetPlayerCharacter::DoAttackSequence()
+{
+	
+}
+
+void ASignetPlayerCharacter::CameraShake(const ECameraShakeType& Shake, float Intensity)
+{
+	if (CameraShakeComp) CameraShakeComp->PlayCameraShake(Shake, Intensity);
 }
 
 void ASignetPlayerCharacter::ApplyDefaultMesh(const EGearSlot InGearSlot, const FCharacterPartsRow* Parts)

@@ -54,6 +54,9 @@ public:
 	FGuid GetEquippedInstance(EGearSlot Slot) const;
 
 	UFUNCTION(BlueprintPure, Category="Inventory")
+	FGameplayTag GetEquippedWeaponSkill(EGearSlot Slot = EGearSlot::Main) const;
+
+	UFUNCTION(BlueprintPure, Category="Inventory")
 	bool IsEquipped(const FGuid& InstanceId) const;
 	
 	UFUNCTION(Server, Reliable) void ServerTryAddItem(int32 ItemID, int32 Quantity);
@@ -72,6 +75,9 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_EquippedInstances)
 	TArray<FGuid> EquippedInstanceIds;
+	
+	TKeyValuePair<int32, FGameplayTag> CachedMainSkill = {0, FGameplayTag::EmptyTag};
+	TKeyValuePair<int32, FGameplayTag> CachedOffSkill = {0, FGameplayTag::EmptyTag};
 	
 	UFUNCTION()
 	void OnRep_EquippedIDs(const TArray<int32>& Old);

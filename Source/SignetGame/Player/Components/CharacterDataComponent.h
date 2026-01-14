@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "SignetGame/Abilities/ActionTypes.h"
 #include "SignetGame/Data/AudioTypes.h"
+#include "SignetGame/Combat/CombatTypes.h"
+#include "SignetGame/Data/CharacterParts.h"
 #include "CharacterDataComponent.generated.h"
 
 class UGameDataSubsystem;
@@ -34,6 +36,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<UAnimMontage*> GetAttackRoundMontages(const EMontageType AttackType, const int AttackCount);
 
+	UAnimMontage* GetMovingAttackMontage(const EActionDirection Direction);
+
 
 // Begin Race Specific Sounds
 
@@ -45,6 +49,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	USoundBase* GetFootstepSound();
 	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	USoundBase* GetWeaponWhooshSound(EPhysicalAttackDirection Direction);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	USoundBase* GetWeaponImpactSound(const FAttackResult& Result);
+	
 	
 private:
 
@@ -53,6 +63,9 @@ private:
 
 	UGameDataSubsystem* GetGameData();
 	const FCharacterPartsRow* GetParts();
-	
+	int GetFaceVoiceIndex();
+	FVoiceBank GetVoiceBank();
+
+	bool IsWeaponAction(const EMontageType ActionType);
 
 };

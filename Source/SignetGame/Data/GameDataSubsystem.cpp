@@ -23,6 +23,17 @@ void UGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 		UE_LOG(LogTemp, Warning, TEXT("CharacterPartsTableRef is null (check INI)."));
 	}
 
+	if (!CharacterWeaponTypesTableRef.IsNull())
+	{
+		CharacterWeaponTypesTable = CharacterWeaponTypesTableRef.LoadSynchronous();
+		UE_LOG(LogTemp, Display, TEXT("Loaded CharacterWeaponTypeTable: %s"),
+			*GetNameSafe(CharacterWeaponTypesTable));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CharacterWeaponTypeTableRef is null (check INI)."));
+	}
+
 	if (!ItemTableRef.IsNull())
 	{
 		ItemTable = ItemTableRef.LoadSynchronous();
@@ -38,7 +49,26 @@ void UGameDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		WeaponSoundTable = WeaponSoundTableRef.LoadSynchronous();
 	}
-	
+
+	if (!FootstepDataAssetRef.IsNull())
+	{
+		FootstepBank = FootstepDataAssetRef.LoadSynchronous();
+	}
+
+	if (!UISoundDataAssetRef.IsNull())
+	{
+		UISoundBank = UISoundDataAssetRef.LoadSynchronous();
+	}
+
+	if (!GlobalVFXDataAssetRef.IsNull())
+	{
+		GlobalVFX = GlobalVFXDataAssetRef.LoadSynchronous();
+	}
+
+	if (!CriticalImpactRef.IsNull())
+	{
+		CriticalImpactSound = CriticalImpactRef.LoadSynchronous();
+	}
 
 	// Hydrate the item cache
 	for (const auto& Pair : ItemTable->GetRowMap())
@@ -113,13 +143,119 @@ const FCharacterPartsRow* UGameDataSubsystem::GetCharacterPartsRow(const ERace I
 	return nullptr;
 }
 
+const FCharacterWeaponTypeData* UGameDataSubsystem::GetWeaponTypeRow(ERace InRace, const FGameplayTag& WeaponTypeTag)
+{
+	if (CharacterWeaponTypesTable == nullptr)
+	{
+		UE_LOG(LogSignetGameData, Error, TEXT("Request made to the GameDataSubsystem for %s WeaponType, but Weapon Type Table is NULL"), *Data::GetRowNameFromEnum(InRace).ToString());
+	}
+
+	if (const auto* Row = CharacterWeaponTypesTable->FindRow<FCharacterWeaponTypeRow>(Data::GetRowNameFromEnum(InRace), TEXT("WeaponTypeLookup")))
+	{
+		if (const auto* Res = Row->WeaponTypes.Find(WeaponTypeTag))
+		{
+			return Res;
+		}
+	}
+	
+	return nullptr;
+}
+
 const FInventoryItem* UGameDataSubsystem::GetItem(const int32 ItemId)
 {
-	if (ItemTable == nullptr || ItemCache.IsEmpty()) return nullptr;
+	if (ItemTable == nullptr || ItemCache.IsEmpty() || ItemId == 0) return nullptr;
 	return ItemCache.Find(ItemId);
 }
 
 const FWeaponSoundBankTableRow* UGameDataSubsystem::GetWeaponSound(const FGameplayTag& WeaponTypeTag)
 {
+	if (!WeaponTypeTag.IsValid())
+	{
+		return nullptr;
+	}
+
+	if (const auto FoundRow = WeaponSoundCache.Find(WeaponTypeTag))
+	{
+		return *FoundRow;
+	}
+
+	if (WeaponSoundTable == nullptr && !WeaponSoundTableRef.IsNull())
+	{
+		WeaponSoundTable = WeaponSoundTableRef.LoadSynchronous();
+	}
+
+	if (WeaponSoundTable)
+	{
+		if (const auto Row = WeaponSoundTable->FindRow<FWeaponSoundBankTableRow>(WeaponTypeTag.GetTagName(), TEXT("WeaponSoundLookup")))
+		{
+			WeaponSoundCache.Add(WeaponTypeTag, const_cast<FWeaponSoundBankTableRow*>(Row));
+			return Row;
+		}
+		
+		UE_LOG(LogSignetGameData, Warning, TEXT("GetWeaponSound: Row not found for tag [%s]"), *WeaponTypeTag.ToString());
+	}
+	else
+	{
+		UE_LOG(LogSignetGameData, Error, TEXT("GetWeaponSound: WeaponSoundTable is null and could not be loaded."));
+	}
+
 	return nullptr;
 }
+
+USoundBase* UGameDataSubsystem::GetFootstep(const EPhysicalSurface SurfaceType, const EArmorSoundClass ArmorClass)
+{
+	if (FootstepBank)
+	{
+		if (const auto SoundBank = FootstepBank->FootstepSounds.Find(ArmorClass))
+		{
+			if (const auto Sound = SoundBank->FootstepMaterialMap.Find(SurfaceType))
+			{
+				return *Sound;
+			}
+		}
+
+		if (const auto Default = FootstepBank->FootstepSounds.Find(EArmorSoundClass::Cloth))
+		{
+			if (const auto Sound = Default->FootstepMaterialMap.Find(SurfaceType1))
+			{
+				return *Sound;
+			}
+		}
+	}
+	return nullptr;
+}
+
+USoundBase* UGameDataSubsystem::GetUISound(const EUISound SoundType)
+{
+	if (UISoundCache.Contains(SoundType))
+	{
+		return *UISoundCache.Find(SoundType);
+	}
+	
+	if (UISoundBank)
+	{
+		if (const auto FoundSound = UISoundBank->UISounds.Find(SoundType))
+		{
+			UISoundCache.Add(SoundType, *FoundSound);
+			return *FoundSound;
+		}
+	}
+
+	return nullptr;
+}
+
+FVFXSystem* UGameDataSubsystem::GetGlobalVFX(const EVFXType VFXType)
+{
+	if (GlobalVFX == nullptr)
+	{
+		return nullptr;
+	}
+
+	if (const auto System = GlobalVFX->VFXSystems.Find(VFXType))
+	{
+		return System;
+	}
+
+	return nullptr;
+}
+

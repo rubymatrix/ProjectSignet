@@ -44,6 +44,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "States")
 	void ForceSetState(const FGameplayTag NewState);
 
+protected:
+
+	virtual void ClientActivateAbilityFailed_Implementation(FGameplayAbilitySpecHandle AbilityToActivate, int16 PredictionKey) override;
+
 private:
 
 	

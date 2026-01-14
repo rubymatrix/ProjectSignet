@@ -6,10 +6,15 @@
 #include "AlsCharacter.h"
 #include "InputActionValue.h"
 #include "VisualState.h"
+#include "SignetGame/Combat/CombatInterface.h"
+#include "SignetGame/Combat/CombatTypes.h"
 #include "SignetGame/Data/CharacterParts.h"
 #include "SignetGame/Inventory/InventoryTypes.h"
 #include "SignetPlayerCharacter.generated.h"
 
+class UCameraShakeComponent;
+class UCharacterAudioComponent;
+class UCharacterDataComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
 
 class USignetVisualComponent;
@@ -29,7 +34,7 @@ struct FInventoryItem;
 struct FCharacterPartsRow;
 
 UCLASS()
-class SIGNETGAME_API ASignetPlayerCharacter : public AAlsCharacter
+class SIGNETGAME_API ASignetPlayerCharacter : public AAlsCharacter, public ICombatInterface
 {
 	GENERATED_BODY()
 
@@ -76,6 +81,12 @@ protected:
 	TObjectPtr<UTargetingComponent> Targeting;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
 	TObjectPtr<USignetInventoryComponent> InventoryComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UCharacterDataComponent> CharacterData;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UCharacterAudioComponent> CharacterAudio;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UCameraShakeComponent> CameraShakeComp;
 
 public:
 
@@ -87,11 +98,17 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UStatsComponent* GetStatsComponent() const { return Stats; }
 	
+	UFUNCTION(BlueprintCallable, Category="Movement")
+	float GetMoveSpeedMultiplier() const;
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UTargetingComponent* GetTargetingComponent() const { return Targeting; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE USignetInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UCharacterAudioComponent* GetCharacterAudioComponent() const { return CharacterAudio; }
 
 	USkeletalMeshComponent* GetFaceComponent();
 	USkeletalMeshComponent* GetMeshComponent(const EGearSlot& GearSlot);
@@ -136,6 +153,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
 	TObjectPtr<UInputAction> MenuAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
+	TObjectPtr<UInputAction> TabTargetAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
+	TObjectPtr<UInputAction> ZoomAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Bindings")
+	TObjectPtr<UInputAction> NextTargetAction;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
 	float LookUpMouseSensitivity{-1.0f};
 
@@ -148,6 +174,17 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayThumbnail=false), Category="Settings|Input|Options")
 	float LookRightRate{90.f};
 
+	/** Max turn speed when locked on in degrees per second. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Targeting")
+	float MaxTurnRateDegPerSec = 540.f;
+
+	/** Movement speed scalar when locked on. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Targeting")
+	float LockedMoveSpeedScalar = 0.9f;
+
+	/** Radial (forward/back) movement speed scalar when locked on. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Targeting")
+	float LockedRadialSpeedScalar = 0.8f;
 
 // Begin Stats System
 
@@ -186,6 +223,8 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
+	virtual void Tick(float DeltaSeconds) override;
+
 	
 // Begin Input Action Handlers
 	
@@ -201,6 +240,9 @@ protected:
 	virtual void Input_OnAccept(const FInputActionValue& ActionValue);
 	virtual void Input_OnCancel(const FInputActionValue& ActionValue);
 	virtual void Input_OnMenu(const FInputActionValue& ActionValue);
+	virtual void Input_OnTabTarget(const FInputActionValue& ActionValue);
+	virtual void Input_OnZoom(const FInputActionValue& ActionValue);
+	virtual void Input_OnNextTarget(const FInputActionValue& ActionValue);
 
 
 // Begin Replication Functions
@@ -246,6 +288,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateFace(const EFace NewFace);
 
+	UFUNCTION(BlueprintCallable)
+	void PerformAttack();
+
 	void CaptureVisualState(const ERace NewRace, const EFace NewFace);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -253,7 +298,36 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE EFace GetCurrentFace() const { return VisualState.Face; }
+
+
+	//~ Begin ICombatInterface
+	virtual float GetHealth() override;
+	virtual float GetMaxHealth() override;
+	virtual float GetPower() override;
+	virtual float GetMaxPower() override;
+	virtual float GetTP() override;
+	virtual void PlayHitReaction() override;
+	virtual void HitFlash() override;
+	virtual void PlayVocalization(const EVocalizationType VoiceType) override;
+	virtual void PlayWeaponSwingAtLocation(const FVector& Location) override;
+	virtual void PlayImpactSoundAtLocation(const FVector& Location) override;
+
+	virtual void PlayWeaponWhoosh() override;
+	virtual void PlayWeaponImpact() override;
+
+	virtual void PushAttackResults(const TArray<FAttackResult>& Results) override;
+	virtual void AdvanceAttackResult() override;
+	virtual bool GetCurrentAttackResult(FAttackResult& OutResult) override;
+	virtual void ClearAttackResults() override;
+	virtual void DoAttackSequence() override;
+	virtual void CameraShake(const ECameraShakeType& Shake, float Intensity = 1) override;
+	//~ End ICombatInterface
 	
+	UPROPERTY(Transient)
+	TArray<FAttackResult> AttackResultQueue;
+
+	UPROPERTY(Transient)
+	int32 CurrentResultIndex = -1;
 
 private:
 	

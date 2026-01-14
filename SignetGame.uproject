@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{CEBBBDDF-41AB-1BCA-06FC-C487C19E188C}",
+	"EngineAssociation": "{48202AE0-45EC-019C-1737-DAAE0C1A1EB6}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -9,11 +9,11 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		},
-        {
-            "Name": "SignetGameEditor",
-            "Type": "Editor",
-            "LoadingPhase": "Default"
-        }
+		{
+			"Name": "SignetGameEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
 	],
 	"Plugins": [
 		{
@@ -221,6 +221,14 @@
 			"SupportedTargetPlatforms": [
 				"Mac"
 			]
-		}
+		},
+		{
+			"Name": "AnimationWarping",
+			"Enabled": true
+		},
+        {
+          "Name": "DragonIKPlugin",
+          "Enabled": true
+        }
 	]
 }

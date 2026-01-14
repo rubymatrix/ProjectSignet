@@ -59,6 +59,15 @@ struct SIGNETGAME_API FVoiceBank
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TMap<EVocalizationType, FVoiceSet> Vocals;
+
+	bool HasVocal(const EVocalizationType VocalType) const
+	{
+		if (const auto VoiceSet = Vocals.Find(VocalType))
+		{
+			return VoiceSet->Sounds.Num() > 0;
+		}
+		return false;
+	}
 };
 
 USTRUCT(Blueprintable)
@@ -93,6 +102,12 @@ USTRUCT(BlueprintType)
 struct SIGNETGAME_API FWeaponSoundBankTableRow : public FTableRowBase
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USoundBase> EngageSound;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USoundBase> DisengageSound;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FImpactSoundBank ImpactSounds;
@@ -112,3 +127,68 @@ public:
 	TMap<EArmorSoundClass, FFootstepBank> FootstepSounds;
 	
 };
+
+
+
+UENUM(BlueprintType)
+enum class EUISound : uint8
+{
+	None,
+	OpenMenu,
+	CloseMenu,
+	MenuMovement,
+	OpenActionMenu,
+	CloseActionMenu,
+	Confirm,
+	Target,
+	Cancel,
+	LevelUp,
+	LevelDown,
+	QuestComplete,
+	MissionComplete,
+	RankUp
+};
+
+UCLASS()
+class SIGNETGAME_API UUISoundAsset : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<EUISound, USoundBase*> UISounds;
+	
+};
+
+
+UENUM(BlueprintType)
+enum class EAudioType : uint8
+{
+	BGM,
+	Ambience,
+	SoundEffects,
+	UI
+};
+
+USTRUCT(BlueprintType)
+struct SIGNETGAME_API FAudioChannelConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	float VolumeMultiplier = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	float PitchMultiplier = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	float StartTime = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	class USoundConcurrency* ConcurrencySettings = nullptr;
+};
+
+
+
+

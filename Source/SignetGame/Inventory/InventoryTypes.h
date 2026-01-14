@@ -149,6 +149,9 @@ struct SIGNETGAME_API FInventoryItem
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Visual")
 	FString MeshPath;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Visual")
+	FString OffhandMeshPath;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sound/FX")
 	EWeaponSoundSlot WeaponSoundType = EWeaponSoundSlot::Slot1;
 

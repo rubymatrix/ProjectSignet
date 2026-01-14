@@ -42,8 +42,7 @@ protected:
 							const FGameplayAbilityActorInfo* ActorInfo,
 							const FGameplayAbilityActivationInfo ActivationInfo,
 							bool bReplicateEndAbility, bool bWasCancelled) override;
-
-private:
+	
 	
 	UFUNCTION()
 	virtual void OnMontageCompleted();
@@ -57,6 +56,8 @@ private:
 	
 	UFUNCTION()
 	virtual void OnMontageBlendOut();
+
+private:
 
 	bool TryStateTransition() const;
 	

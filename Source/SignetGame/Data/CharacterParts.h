@@ -94,3 +94,48 @@ struct SIGNETGAME_API FCharacterPartsRow : public FTableRowBase
 		return FoundSlot ? *FoundSlot : nullptr;
 	}
 };
+
+
+UENUM(BlueprintType)
+enum class EActionDirection : uint8
+{
+	Front,
+	Back,
+	Left,
+	Right
+};
+
+
+USTRUCT(BlueprintType)
+struct SIGNETGAME_API FCharacterWeaponTypeData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)	
+	TMap<EMontageType, UAnimMontage*> ActionMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TArray<UAnimMontage*> MainAttackMontages;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TArray<UAnimMontage*> SubAttackMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TArray<UAnimMontage*> KickAttackMontages;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<EActionDirection, UAnimMontage*> DirectionalAttackMontages;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<EActionDirection, UAnimMontage*> DirectionalReactMontages;
+};
+
+
+USTRUCT(BlueprintType)
+struct SIGNETGAME_API FCharacterWeaponTypeRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<FGameplayTag, FCharacterWeaponTypeData> WeaponTypes;
+};

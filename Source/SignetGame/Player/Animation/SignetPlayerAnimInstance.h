@@ -23,6 +23,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	TWeakObjectPtr<ASignetPlayerCharacter> SignetCharacter;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Config|Animation")
+	bool bEnableLowerBodySlot = false;
+
 // Gameplay Tag Caches
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
@@ -41,6 +44,9 @@ public:
 	FGameplayTag RotationModeTag;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "State|Tags")
 	FGameplayTag MoveDirectionTag;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Animation")
+	float OrientationWarpAngle = 0.f;
 	
 // Begin Animation Setting References
 	

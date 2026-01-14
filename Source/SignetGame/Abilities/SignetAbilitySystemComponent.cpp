@@ -4,18 +4,29 @@
 #include "SignetAbilitySystemComponent.h"
 
 #include "TagCache.h"
+#include "SignetGame/Player/Components/TargetingComponent.h"
+#include "StateEffects/GE_State_Casting.h"
+#include "StateEffects/GE_State_Crafting.h"
+#include "StateEffects/GE_State_Cutscene.h"
+#include "StateEffects/GE_State_Dead.h"
+#include "StateEffects/GE_State_Engaged.h"
+#include "StateEffects/GE_State_Idle.h"
+#include "StateEffects/GE_State_Resting.h"
+#include "StateEffects/GE_State_Sitting.h"
+#include "StateEffects/GE_State_Stunned.h"
+#include "State/GA_Attack.h"
 
 USignetAbilitySystemComponent::USignetAbilitySystemComponent()
 {
-	// StateGameplayEffects.Add(FTagCache::Get().State.Idle, UGE_State_Idle::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Engaged, UGE_State_Engaged::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Casting, UGE_State_Casting::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Resting, UGE_State_Resting::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Sitting, UGE_State_Sitting::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Dead, UGE_State_Dead::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Stunned, UGE_State_Stunned::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Cutscene, UGE_State_Cutscene::StaticClass());
-	// StateGameplayEffects.Add(FTagCache::Get().State.Crafting, UGE_State_Crafting::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Idle, UGE_State_Idle::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Engaged, UGE_State_Engaged::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Casting, UGE_State_Casting::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Resting, UGE_State_Resting::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Sitting, UGE_State_Sitting::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Dead, UGE_State_Dead::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Stunned, UGE_State_Stunned::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Cutscene, UGE_State_Cutscene::StaticClass());
+	StateGameplayEffects.Add(FTagCache::Get().State.Crafting, UGE_State_Crafting::StaticClass());
 }
 
 void USignetAbilitySystemComponent::BeginPlay()
@@ -112,6 +123,14 @@ void USignetAbilitySystemComponent::ForceSetState(const FGameplayTag NewState)
 	}
 }
 
+void USignetAbilitySystemComponent::ClientActivateAbilityFailed_Implementation(
+	FGameplayAbilitySpecHandle AbilityToActivate, int16 PredictionKey)
+{
+	Super::ClientActivateAbilityFailed_Implementation(AbilityToActivate, PredictionKey);
+
+	
+}
+
 void USignetAbilitySystemComponent::ClearCurrentStateGE()
 {
 	if (CurrentStateHandle.IsValid())
@@ -173,6 +192,13 @@ void USignetAbilitySystemComponent::SetAutoAttackTarget(AActor* NewTarget)
 
 AActor* USignetAbilitySystemComponent::GetAutoAttackTarget() const
 {
+	if (const auto Actor = GetAvatarActor())
+	{
+		if (const auto Targeting = Actor->GetComponentByClass<UTargetingComponent>())
+		{
+			return Targeting->GetLockedOnTargetActor();
+		}
+	}
 	return AutoAttackTarget.IsValid() ? AutoAttackTarget.Get() : nullptr;
 }
 
@@ -216,7 +242,7 @@ void USignetAbilitySystemComponent::AutoAttackTick()
 
 void USignetAbilitySystemComponent::TryPerformAutoAttack()
 {
-	// TryActivateAbilityByClass(UGA_Attack::StaticClass(), true);
+	TryActivateAbilityByClass(UGA_Attack::StaticClass(), true);
 }
 
 bool USignetAbilitySystemComponent::IsAutoAttackAllowed() const

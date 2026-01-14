@@ -38,6 +38,7 @@ void ASignetPlayerState::SetRace_Implementation(const ERace& NewRace)
 {
 	Race = NewRace;
 	TriggerRaceVisualUpdate();
+	DebounceValidateEquipment();
 }
 
 void ASignetPlayerState::SetFace_Implementation(const EFace& NewFace)
@@ -50,6 +51,7 @@ void ASignetPlayerState::SetJob_Implementation(const EJob& NewJob)
 {
 	Job = NewJob;
 	DebounceRecalculateStats();
+	DebounceValidateEquipment();
 }
 
 void ASignetPlayerState::ReceivedPlayerProfile()
@@ -167,6 +169,22 @@ void ASignetPlayerState::DebounceRecalculateStats()
 			{
 				UE_LOG(LogSignet, Error, TEXT("Unable to recalc base stats, pawn was NULL"));
 			}
+		}, 0.15f, false);
+	}
+}
+
+void ASignetPlayerState::DebounceValidateEquipment()
+{
+	if (!HasAuthority()) return;
+	
+	const auto W = GetWorld();
+	if (!W) return;
+
+	if (!W->GetTimerManager().IsTimerActive(ValidateEquipmentDebounceTimer))
+	{
+		W->GetTimerManager().SetTimer(ValidateEquipmentDebounceTimer, [this]()
+		{
+			ValidateEquipment();
 		}, 0.15f, false);
 	}
 }

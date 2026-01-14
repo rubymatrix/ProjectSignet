@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "SignetGame/Data/AudioTypes.h"
 #include "CharacterAudioComponent.generated.h"
+
+
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -16,5 +19,10 @@ public:
 	
 	UCharacterAudioComponent();
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	TMap<EAudioType, FAudioChannelConfig> AudioSettingsMap;
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void PlayUISound(EUISound SoundType);
 
 };
