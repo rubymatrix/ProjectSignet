@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "AttributeSet.h"
 #include "GameplayEffect.h"
 #include "GameplayTagContainer.h"
 #include "SignetGame/Data/AudioTypes.h"
@@ -85,6 +86,22 @@ ENUM_CLASS_FLAGS(EBodyPart)
 // 0001 1100
 
 USTRUCT(BlueprintType)
+struct SIGNETGAME_API FItemStatModifier
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+	FGameplayAttribute Attribute;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+	bool bIsPercent = false;
+
+	// Percent modifiers use 0.20 for +20%.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+	float Magnitude = 0.0f;
+};
+
+USTRUCT(BlueprintType)
 struct SIGNETGAME_API FInventoryItem
 {
 	GENERATED_BODY()
@@ -133,6 +150,9 @@ struct SIGNETGAME_API FInventoryItem
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Properties")
 	TSubclassOf<UGameplayEffect> EffectClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+	TArray<FItemStatModifier> StatModifiers;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category ="Masking")
 	EFaceClipStage FaceClippingStage = EFaceClipStage::None;

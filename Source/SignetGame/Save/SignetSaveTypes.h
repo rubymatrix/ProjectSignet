@@ -2,6 +2,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "SignetSaveTypes.generated.h"
 
 
@@ -206,6 +207,21 @@ struct SIGNETGAME_API FSignetInventoryItem
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) 
 	int Quantity = 1;
+};
+
+USTRUCT(BlueprintType)
+struct SIGNETGAME_API FSignetSkillProgress
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag SkillTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Rank = 0.0f; // Current skill level (e.g. 200.5)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 SchemaVersion = 1;
 };
 
 USTRUCT(BlueprintType)

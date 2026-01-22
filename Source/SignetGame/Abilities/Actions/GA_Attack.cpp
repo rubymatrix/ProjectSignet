@@ -1,17 +1,25 @@
 ﻿// Copyright Red Lotus Games, All Rights Reserved.
 
 #include "GA_Attack.h"
+#include "GameplayEffect.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "SignetGame/Abilities/Effects/GE_PhysicalDamage.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
 #include "SignetGame/Combat/CombatInterface.h"
 #include "SignetGame/Combat/CombatTypes.h"
 #include "SignetGame/Combat/Components/EffectComponent.h"
+#include "SignetGame/Combat/SignetCombatStatics.h"
 #include "SignetGame/Player/Components/CharacterDataComponent.h"
 #include "SignetGame/Player/SignetPlayerCharacter.h"
 #include "SignetGame/Inventory/SignetInventoryComponent.h"
 #include "TimerManager.h"
 #include "Algo/RandomShuffle.h"
 #include "SignetGame/Abilities/TagCache.h"
+#include "SignetGame/Abilities/Attributes/SignetCombatAttributeSet.h"
+#include "SignetGame/Abilities/Attributes/SignetPrimaryAttributeSet.h"
+#include "SignetGame/Combat/SkillRankStatics.h"
+#include "SignetGame/Util/Logging.h"
 
 UGA_Attack::UGA_Attack()
 {
@@ -25,6 +33,7 @@ UGA_Attack::UGA_Attack()
 	ActivationBlockedTags.AddTag(FTagCache::Get().State.Stunned);
 
 	ActionType = EMontageType::Attack;
+	DamageEffectClass = UGE_PhysicalDamage::StaticClass();
 }
 
 void UGA_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -47,6 +56,44 @@ void UGA_Attack::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
 	AActor* Target = SignetASC->GetAutoAttackTarget();
 	// We allow activation even if target is null (shadow boxing) but usually auto-attack loop checks this.
+	if (Target && ActorInfo->AvatarActor.IsValid())
+	{
+		const FVector AttackerLocation = ActorInfo->AvatarActor->GetActorLocation();
+		const FVector TargetLocation = Target->GetActorLocation();
+		const FVector ToTarget = FVector(TargetLocation.X - AttackerLocation.X, TargetLocation.Y - AttackerLocation.Y, 0.0f);
+		const FVector Forward = FVector(ActorInfo->AvatarActor->GetActorForwardVector().X, ActorInfo->AvatarActor->GetActorForwardVector().Y, 0.0f);
+		const float DistanceSq2D = ToTarget.SizeSquared();
+		const float MaxAttackDistance = 150.0f;
+		const float MinForwardDot = 0.0f;
+
+		if (DistanceSq2D > MaxAttackDistance * MaxAttackDistance)
+		{
+			UE_LOG(LogSignet, Warning, TEXT("GA_Attack blocked: out of range. Dist=%.2f Max=%.2f Target=%s"),
+				FMath::Sqrt(DistanceSq2D), MaxAttackDistance, *GetNameSafe(Target));
+			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+			return;
+		}
+
+		if (!ToTarget.IsNearlyZero() && !Forward.IsNearlyZero())
+		{
+			const FVector ToTargetNormalized = ToTarget.GetSafeNormal();
+			const FVector ForwardNormalized = Forward.GetSafeNormal();
+			const float ForwardDot = FVector::DotProduct(ForwardNormalized, ToTargetNormalized);
+
+			if (ForwardDot < MinForwardDot)
+			{
+				UE_LOG(LogSignet, Warning, TEXT("GA_Attack blocked: target behind. Dot=%.3f Target=%s"),
+					ForwardDot, *GetNameSafe(Target));
+				EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+				return;
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogSignet, Warning, TEXT("GA_Attack: no valid target or avatar. Target=%s Avatar=%s"),
+			*GetNameSafe(Target), *GetNameSafe(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr));
+	}
 
 	// 1. Calculate Results
 	TArray<FAttackResult> Results = CalculateAttackResults(Target);
@@ -186,6 +233,17 @@ void UGA_Attack::TriggerImpactEffects()
 
 		if (Target)
 		{
+			if (ASignetPlayerCharacter* Character = Cast<ASignetPlayerCharacter>(Attacker))
+			{
+				const USignetInventoryComponent* Inventory = Character->GetInventoryComponent();
+				UAbilitySystemComponent* TargetAsc = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+				if (Inventory && TargetAsc)
+				{
+					const int32 VictimLevel = static_cast<int32>(TargetAsc->GetNumericAttribute(USignetPrimaryAttributeSet::GetJobLevelAttribute()));
+					USkillRankStatics::TrySkillUp(Character, Inventory->GetEquippedWeaponSkill(), VictimLevel);
+				}
+			}
+
 			if (Result.bIsHit)
 			{
 				// Hit Flash on Target
@@ -193,7 +251,33 @@ void UGA_Attack::TriggerImpactEffects()
 				{
 					TargetCombatant->HitFlash();
 					TargetCombatant->PlayVocalization(EVocalizationType::DamageReact);
-					TargetCombatant->DamageCombatText(FMath::RandRange(20.f, 80.f), Result.bIsCritical);
+					TargetCombatant->DamageCombatText((float)Result.Damage, Result.bIsCritical);
+
+					// Apply Damage GameplayEffect
+					UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+					if (DamageEffectClass && TargetASC)
+					{
+						FGameplayEffectContextHandle Context = SignetASC->MakeEffectContext();
+						Context.AddInstigator(Attacker, Attacker);
+						
+						FGameplayEffectSpecHandle SpecHandle = SignetASC->MakeOutgoingSpec(DamageEffectClass, 1.f, Context);
+						if (SpecHandle.IsValid())
+						{
+							static const FGameplayTag DamageAmountTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Damage"), false);
+							if (DamageAmountTag.IsValid())
+							{
+								SpecHandle.Data.Get()->SetSetByCallerMagnitude(DamageAmountTag, (float)Result.Damage);
+							}
+							else
+							{
+								// Fallback: many projects use "Damage" name for SetByCaller if tags aren't used
+								SpecHandle.Data.Get()->SetSetByCallerMagnitude(FName("Damage"), (float)Result.Damage);
+							}
+							
+							SignetASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+						}
+					}
+
 					if (Result.bIsCritical)
 					{
 						AttackerCombatant->CameraShake(ECameraShakeType::CriticalImpact, 1.f);
@@ -258,55 +342,129 @@ TArray<FAttackResult> UGA_Attack::CalculateAttackResults(AActor* Target)
 {
 	TArray<FAttackResult> Results;
 
-	// Simplified logic for now: 1-3 hits based on some randomness
-	// In a real implementation, this would query stats, traits (Double Attack, etc.)
-	
-	int32 NumHits = 1;
-	const float MultiHitChance = 0.50f; // 20% chance for extra hit
-	
-	if (FMath::FRand() < MultiHitChance) NumHits++;
-	if (FMath::FRand() < MultiHitChance * 0.5f) NumHits++;
+	AActor* Attacker = GetAvatarActorFromActorInfo();
+	USignetAbilitySystemComponent* AttackerAsc = Cast<USignetAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
+	USignetAbilitySystemComponent* TargetAsc = Target ? Cast<USignetAbilitySystemComponent>(Target->GetComponentByClass(USignetAbilitySystemComponent::StaticClass())) : nullptr;
 
-	// Determine if we should alternate hands
-	bool bAlternateHands = true;
-	if (const ASignetPlayerCharacter* Character = Cast<ASignetPlayerCharacter>(GetAvatarActorFromActorInfo()))
+	if (!AttackerAsc || !TargetAsc) return Results;
+
+	const FSkillTags& SkillTags = FTagCache::Get().Skill;
+	FGameplayTag WeaponSkill = SkillTags.None;
+	bool bIsH2H = false;
+	bool bDualWield = false;
+
+	if (const ASignetPlayerCharacter* Character = Cast<ASignetPlayerCharacter>(Attacker))
 	{
 		if (const USignetInventoryComponent* Inventory = Character->GetInventoryComponent())
 		{
-			const FGameplayTag WeaponSkill = Inventory->GetEquippedWeaponSkill();
-			const FSkillTags& SkillTags = FTagCache::Get().Skill;
-			
-			if (WeaponSkill != SkillTags.None && WeaponSkill != SkillTags.H2H)
-			{
-				bAlternateHands = false;
-			}
-
-			if (NumHits < 2 && (WeaponSkill == SkillTags.H2H || WeaponSkill == SkillTags.None))
-			{
-				NumHits = 2;
-			}
+			WeaponSkill = Inventory->GetEquippedWeaponSkill();
+			bIsH2H = (WeaponSkill == SkillTags.H2H || WeaponSkill == SkillTags.None);
+			bDualWield = (Inventory->GetEquippedItemID(EGearSlot::Sub) != 0);
 		}
 	}
 
-	for (int32 i = 0; i < NumHits; ++i)
+	// 1. Determine Number of Attacks (Multi-hit logic)
+	int32 MainHandHits = 1;
+	int32 SubHandHits = 0;
+
+	// Ported multi-hit logic from CAttackRound::CreateAttacks
+	float TripleAttackRate = AttackerAsc->GetNumericAttribute(USignetCombatAttributeSet::GetTripleAttackRateAttribute());
+	float DoubleAttackRate = AttackerAsc->GetNumericAttribute(USignetCombatAttributeSet::GetDoubleAttackRateAttribute());
+	float QuadAttackRate = AttackerAsc->GetNumericAttribute(USignetCombatAttributeSet::GetQuadAttackRateAttribute());
+
+	EPhysicalAttackType RoundType = EPhysicalAttackType::Normal;
+
+	if (FMath::RandRange(0.0f, 100.0f) < QuadAttackRate)
+	{
+		MainHandHits = 4;
+		RoundType = EPhysicalAttackType::Quad;
+	}
+	else if (FMath::RandRange(0.0f, 100.0f) < TripleAttackRate)
+	{
+		MainHandHits = 3;
+		RoundType = EPhysicalAttackType::Triple;
+	}
+	else if (FMath::RandRange(0.0f, 100.0f) < DoubleAttackRate)
+	{
+		MainHandHits = 2;
+		RoundType = EPhysicalAttackType::Double;
+	}
+
+	if (bIsH2H)
+	{
+		// H2H always swings twice if not a single swing mob
+		SubHandHits = 1;
+	}
+	else if (bDualWield)
+	{
+		SubHandHits = 1;
+	}
+
+	// 2. Generate Swings
+	auto CreateSwing = [&](EGearSlot Slot, EPhysicalAttackDirection Direction, bool bIsFirstSwingInRound)
 	{
 		FAttackResult Result;
-		Result.bIsHit = (FMath::FRand() < 0.80f); // 80% base hit rate
-		Result.bIsCritical = (FMath::FRand() < 0.4f); // 40% crit rate
-		Result.AttackType = (NumHits > 1) ? EPhysicalAttackType::Double : EPhysicalAttackType::Normal;
-		if (NumHits > 2) Result.AttackType = EPhysicalAttackType::Triple;
-		
-		// Alternate hands if multi-hit and weapon allows it
-		if (bAlternateHands)
+		Result.AttackDirection = Direction;
+		Result.AttackType = RoundType;
+		Result.bIsFirstSwing = bIsFirstSwingInRound;
+
+		// Hit Rate
+		float HitRate = USignetCombatStatics::CalculateHitRate(AttackerAsc, TargetAsc);
+		Result.bIsHit = (FMath::RandRange(0.0f, 100.0f) < HitRate);
+
+		if (Result.bIsHit)
 		{
-			Result.AttackDirection = (i % 2 == 0) ? EPhysicalAttackDirection::Right : EPhysicalAttackDirection::Left;
+			// Anticipation (Third Eye)
+			if (USignetCombatStatics::CheckAnticipated(AttackerAsc, TargetAsc))
+			{
+				Result.bIsHit = false;
+				Result.bIsAnticipated = true;
+			}
+			else
+			{
+				// Critical Hit
+				float CritRate = AttackerAsc->GetNumericAttribute(USignetCombatAttributeSet::GetCriticalHitRateAttribute());
+				Result.bIsCritical = (FMath::RandRange(0.0f, 100.0f) < CritRate);
+
+				// Damage Ratio (pDIF)
+				float pDIF = USignetCombatStatics::CalculateDamageRatio(AttackerAsc, TargetAsc, Result.bIsCritical, 1.0f, WeaponSkill, Slot);
+
+				// Base Damage
+				Result.Damage = USignetCombatStatics::CalculateBaseDamage(AttackerAsc, TargetAsc, Slot, RoundType, bIsH2H, bIsFirstSwingInRound, false, false, pDIF);
+
+				// Block/Guard
+				if (USignetCombatStatics::CheckShieldBlock(AttackerAsc, TargetAsc))
+				{
+					Result.bIsBlocked = true;
+					Result.Damage /= 2; // Shield block reduces damage
+				}
+			}
 		}
-		else
-		{
-			Result.AttackDirection = EPhysicalAttackDirection::Right;
-		}
-		
+
+		return Result;
+	};
+
+		// Main Hand Swings
+	for (int32 i = 0; i < MainHandHits; ++i)
+	{
+		FAttackResult Result = CreateSwing(EGearSlot::Main, EPhysicalAttackDirection::Right, i == 0);
 		Results.Add(Result);
+	}
+
+	// Sub Hand Swings
+	for (int32 i = 0; i < SubHandHits; ++i)
+	{
+		FAttackResult Result = CreateSwing(EGearSlot::Sub, EPhysicalAttackDirection::Left, Results.Num() == 0);
+		Results.Add(Result);
+	}
+
+	// Kick Attacks
+	float KickRate = USignetCombatStatics::CalculateKickAttackRate(AttackerAsc);
+	if (bIsH2H && FMath::RandRange(0.0f, 100.0f) < KickRate)
+	{
+		FAttackResult KickResult = CreateSwing(EGearSlot::Main, EPhysicalAttackDirection::Right, false);
+		KickResult.AttackType = EPhysicalAttackType::Kick;
+		Results.Add(KickResult);
 	}
 
 	return Results;

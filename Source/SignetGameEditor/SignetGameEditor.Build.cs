@@ -11,7 +11,7 @@ public class SignetGameEditor : ModuleRules
 		PublicIncludePaths.AddRange(["SignetGameEditor"]);
 		
 		PublicDependencyModuleNames.AddRange([
-			"Core", "CoreUObject", "Engine", "PhysicsCore", "GameplayTags",
+			"Core", "CoreUObject", "Engine", "PhysicsCore", "GameplayTags", "GameplayAbilities",
 			"SignetGame",
 		]);
 		
@@ -20,6 +20,7 @@ public class SignetGameEditor : ModuleRules
 			"Projects", "DeveloperSettings", "DeveloperToolSettings",
 			"Slate", "SlateCore", "InputCore", "ToolMenus", "EditorStyle",
 			"DataValidation", "MessageLog",
+			"AssetTools", "ContentBrowser", "PropertyEditor",
 			"CollectionManager", "SourceControl", "Blutility",
 			"Slate", "SlateCore", "UMG"
 		]);

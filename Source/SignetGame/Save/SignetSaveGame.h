@@ -34,6 +34,9 @@ public:
 	TMap<EJob, FSignetJobProgress> Jobs;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FGameplayTag, FSignetSkillProgress> Skills;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FSignetSavedInventory Inventory;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

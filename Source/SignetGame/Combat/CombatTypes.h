@@ -66,6 +66,12 @@ struct FAttackResult
 	bool bIsCovered = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsFirstSwing = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Damage = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EPhysicalAttackType AttackType = EPhysicalAttackType::Normal;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

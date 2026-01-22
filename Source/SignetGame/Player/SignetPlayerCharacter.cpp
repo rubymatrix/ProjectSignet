@@ -18,6 +18,7 @@
 #include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
 #include "SignetGame/Abilities/TagCache.h"
 #include "SignetGame/Abilities/Attributes/SignetPrimaryAttributeSet.h"
+#include "SignetGame/Abilities/Effects/GE_ItemStats.h"
 #include "SignetGame/Inventory/SignetInventoryComponent.h"
 #include "SignetGame/Util/Logging.h"
 #include "SignetGame/Util/Stats.h"
@@ -26,8 +27,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "SignetGame/Combat/CombatInterface.h"
 #include "SignetGame/Combat/CombatTypes.h"
-#include "SignetGame/Abilities/State/GA_Attack.h"
+#include "SignetGame/Abilities/Actions/GA_Attack.h"
 #include "SignetGame/Combat/Components/CameraShakeComponent.h"
+#include "SignetGame/Combat/Components/CombatTextComponent.h"
 
 
 static TArray VisualSlots = { EGearSlot::Main, EGearSlot::Sub, EGearSlot::Head, EGearSlot::Body, EGearSlot::Hands, EGearSlot::Legs, EGearSlot::Feet };
@@ -107,6 +109,7 @@ ASignetPlayerCharacter::ASignetPlayerCharacter(const FObjectInitializer& ObjectI
 	CharacterData = CreateDefaultSubobject<UCharacterDataComponent>(TEXT("CharacterDataComp"));
 	CharacterAudio = CreateDefaultSubobject<UCharacterAudioComponent>(TEXT("CharacterAudioComp"));
 	CameraShakeComp = CreateDefaultSubobject<UCameraShakeComponent>(TEXT("CameraShakeComp"));
+	CombatTextComp = CreateDefaultSubobject<UCombatTextComponent>(TEXT("CombatTextComp"));
 }
 
 void ASignetPlayerCharacter::NotifyControllerChanged()
@@ -227,6 +230,25 @@ void ASignetPlayerCharacter::BeginPlay()
 	if (InventoryComponent)
 	{
 		InventoryComponent->OnEquipmentChanged.AddDynamic(this, &ASignetPlayerCharacter::OnEquipmentChanged);
+		InventoryComponent->OnEquipmentChangedInstance.AddDynamic(this, &ASignetPlayerCharacter::OnEquipmentChangedInstance);
+
+		const int32 SlotCount = USignetInventoryComponent::SlotCount();
+		for (int32 SlotIndex = 0; SlotIndex < SlotCount; ++SlotIndex)
+		{
+			const EGearSlot GearSlot = static_cast<EGearSlot>(SlotIndex);
+			const FGuid InstanceId = InventoryComponent->GetEquippedInstance(GearSlot);
+			if (!InstanceId.IsValid())
+			{
+				continue;
+			}
+
+			const int32 ItemID = InventoryComponent->GetEquippedItemID(GearSlot);
+			const FInventoryItem* ItemDef = ItemID != 0 ? FindItemDef(ItemID) : nullptr;
+			if (ItemDef)
+			{
+				ApplyItemStatModifiers(*ItemDef, InstanceId);
+			}
+		}
 	}
 
 	const auto ASC = GetAbilitySystemComponent();
@@ -808,28 +830,60 @@ float ASignetPlayerCharacter::GetMoveSpeedMultiplier() const
 	return 1.f;
 }
 
+FString ASignetPlayerCharacter::GetEntityName()
+{
+	if (const auto PS = Cast<ASignetPlayerState>(GetPlayerState()))
+	{
+		return PS->PlayerName;
+	}
+	return TEXT("Unknown");
+}
+
 float ASignetPlayerCharacter::GetHealth()
 {
-	return 0.0f;
+	if (const auto Asc = GetSignetAsc())
+	{
+		return Asc->GetNumericAttribute(USignetPrimaryAttributeSet::GetHPAttribute());
+	}
+
+	return 0.f;
 }
 
 float ASignetPlayerCharacter::GetMaxHealth()
 {
+	if (const auto Asc = GetSignetAsc())
+	{
+		return Asc->GetNumericAttribute(USignetPrimaryAttributeSet::GetMaxHPAttribute());
+	}
+	
 	return 0.0f;
 }
 
 float ASignetPlayerCharacter::GetPower()
 {
+	if (const auto Asc = GetSignetAsc())
+	{
+		return Asc->GetNumericAttribute(USignetPrimaryAttributeSet::GetMPAttribute());
+	}
+	
 	return 0.0f;
 }
 
 float ASignetPlayerCharacter::GetMaxPower()
 {
+	if (const auto Asc = GetSignetAsc())
+	{
+		return Asc->GetNumericAttribute(USignetPrimaryAttributeSet::GetMaxMPAttribute());
+	}
 	return 0.0f;
 }
 
 float ASignetPlayerCharacter::GetTP()
 {
+	if (const auto Asc = GetSignetAsc())
+	{
+		return Asc->GetNumericAttribute(USignetPrimaryAttributeSet::GetTPAttribute());
+	}
 	return 0.0f;
 }
 
@@ -999,9 +1053,111 @@ void ASignetPlayerCharacter::ApplyMeshHiding()
 	}
 }
 
+void ASignetPlayerCharacter::ApplyItemStatModifiers(const FInventoryItem& ItemDef, const FGuid& InstanceId)
+{
+	if (ItemDef.StatModifiers.IsEmpty())
+	{
+		return;
+	}
+
+	USignetAbilitySystemComponent* Asc = GetSignetAsc();
+	if (!Asc)
+	{
+		return;
+	}
+
+	UGE_ItemStats* Effect = NewObject<UGE_ItemStats>(GetTransientPackage());
+	Effect->Modifiers.Reserve(ItemDef.StatModifiers.Num());
+
+	for (const FItemStatModifier& ModDef : ItemDef.StatModifiers)
+	{
+		if (!ModDef.Attribute.IsValid())
+		{
+			continue;
+		}
+
+		FGameplayModifierInfo ModInfo;
+		ModInfo.Attribute = ModDef.Attribute;
+		ModInfo.ModifierOp = ModDef.bIsPercent ? EGameplayModOp::Multiplicitive : EGameplayModOp::Additive;
+		ModInfo.ModifierMagnitude = FGameplayEffectModifierMagnitude(FScalableFloat(ModDef.Magnitude));
+		Effect->Modifiers.Add(ModInfo);
+	}
+
+	if (Effect->Modifiers.IsEmpty())
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle Context = Asc->MakeEffectContext();
+	Context.AddSourceObject(this);
+
+	const FGameplayEffectSpec Spec(Effect, Context, 1.0f);
+	const FActiveGameplayEffectHandle Handle = Asc->ApplyGameplayEffectSpecToSelf(Spec);
+	if (Handle.IsValid())
+	{
+		ItemStatEffectHandles.Add(InstanceId, Handle);
+	}
+}
+
+void ASignetPlayerCharacter::RemoveItemStatModifiers(const FGuid& InstanceId)
+{
+	if (!InstanceId.IsValid())
+	{
+		return;
+	}
+
+	FActiveGameplayEffectHandle* Handle = ItemStatEffectHandles.Find(InstanceId);
+	if (!Handle)
+	{
+		return;
+	}
+
+	if (USignetAbilitySystemComponent* Asc = GetSignetAsc())
+	{
+		if (Handle->IsValid())
+		{
+			Asc->RemoveActiveGameplayEffect(*Handle);
+		}
+	}
+
+	ItemStatEffectHandles.Remove(InstanceId);
+}
+
 void ASignetPlayerCharacter::OnEquipmentChanged(EGearSlot InGearSlot, int32 OldItemID, int32 NewItemID)
 {
 	ApplyEquipmentSlot(InGearSlot);
 	ApplyMeshHiding();
+}
+
+void ASignetPlayerCharacter::OnEquipmentChangedInstance(EGearSlot InGearSlot, FGuid OldInstance, FGuid NewInstance)
+{
+	if (OldInstance.IsValid())
+	{
+		RemoveItemStatModifiers(OldInstance);
+	}
+
+	if (!NewInstance.IsValid())
+	{
+		return;
+	}
+
+	if (!InventoryComponent)
+	{
+		return;
+	}
+
+	const int32 ItemID = InventoryComponent->GetEquippedItemID(InGearSlot);
+	if (ItemID == 0)
+	{
+		return;
+	}
+
+	const FInventoryItem* ItemDef = FindItemDef(ItemID);
+	if (!ItemDef)
+	{
+		return;
+	}
+
+	ApplyItemStatModifiers(*ItemDef, NewInstance);
 }
 

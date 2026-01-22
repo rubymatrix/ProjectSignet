@@ -13,7 +13,8 @@ enum class ECombatTextType : uint8
 {
 	Damage,
 	Healing,
-	StatusEffect
+	StatusEffect,
+	SkillUp
 };
 
 USTRUCT(BlueprintType)
@@ -32,6 +33,9 @@ struct FCombatTextData
 
 	UPROPERTY(VisibleAnywhere)
 	FSlateColor TextColor;
+
+	UPROPERTY(VisibleAnywhere)
+	FVector2D ScreenOffset = FVector2D::ZeroVector;
 };
 
 
@@ -66,6 +70,9 @@ protected:
 
 public:
 
+	UPROPERTY(Transient)
+	ECombatTextType CombatTextType;
+
 	void TriggerAnimation();
 
 private:
@@ -75,6 +82,12 @@ private:
 
 	UPROPERTY(Transient)
 	FVector2D ScreenPosition;
+
+	UPROPERTY(Transient)
+	FVector2D ScreenOffset;
+
+	UPROPERTY(Transient)
+	bool bUseViewportCenter = false;
 	
 	void CapturePosition();
 

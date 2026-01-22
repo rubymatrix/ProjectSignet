@@ -6,6 +6,7 @@
 #include "SignetGame/Player/SignetPlayerCharacter.h"
 #include "SignetGame/Inventory/SignetInventoryComponent.h"
 #include "SignetGame/Player/Components/TargetingComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 USignetPlayerAnimInstance::USignetPlayerAnimInstance()
 {
@@ -40,6 +41,9 @@ void USignetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
+	bLookAtEnabled = false;
+	LookAtLocation = FVector::ZeroVector;
+
 	if (SignetCharacter.IsValid())
 	{
 		GaitTag = Character->GetDesiredGait();
@@ -50,6 +54,23 @@ void USignetPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		DetermineCastingTag();
 
 		MoveDirectionTag = DetermineDirectionTag();
+
+		const UTargetingComponent* TargetingComponent = SignetCharacter->GetTargetingComponent();
+		if (TargetingComponent && TargetingComponent->IsLocked())
+		{
+			if (const AActor* TargetActor = TargetingComponent->GetLockedOnTargetActor())
+			{
+				if (const USkeletalMeshComponent* TargetMesh = TargetActor->FindComponentByClass<USkeletalMeshComponent>())
+				{
+					static const FName LookAtSocketName("LookAt");
+					if (TargetMesh->DoesSocketExist(LookAtSocketName))
+					{
+						LookAtLocation = TargetMesh->GetSocketLocation(LookAtSocketName);
+						bLookAtEnabled = true;
+					}
+				}
+			}
+		}
 	}
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "CombatTextComponent.generated.h"
 
@@ -25,10 +26,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddStatusEffectText(const FString& Text);
 
+	UFUNCTION(BlueprintCallable)
+	void AddSkillUpText(const FGameplayTag& SkillTag, float Amount);
+
 protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
 	TSubclassOf<class UCombatTextWidget> CombatTextWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
+	TSubclassOf<class UCombatTextWidget> StatusEffectWidgetClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
+	TSubclassOf<class UCombatTextWidget> SkillUpWidgetClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
 	FSlateColor DefaultTextColor = FLinearColor::White;;
@@ -38,4 +48,13 @@ protected:
 	FSlateColor HealingTextColor = FLinearColor::Green;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
 	FSlateColor StatusEffectTextColor = FLinearColor::Yellow;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
+	FSlateColor SkillUpTextColor = FLinearColor(0.4f, 1.0f, 0.4f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
+	FVector2D SkillUpScreenOffset = FVector2D(100.0f, 0.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Text")
+	FVector2D StatusEffectScreenOffset = FVector2D(0.f, 0.0f);
 };

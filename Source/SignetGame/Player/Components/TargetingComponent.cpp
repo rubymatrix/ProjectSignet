@@ -647,23 +647,30 @@ FRotator UTargetingComponent::GetControlRotationOnTarget(const AActor* OtherActo
 	const FRotator StableLookRotation = FRotationMatrix::MakeFromX(TargetLocation - OwnerActor->GetActorLocation()).Rotator();
 
 	float Yaw = StableLookRotation.Yaw;
-
-	// Account for camera side offset to frame the target correctly
-	if (const UAlsCameraComponent* AlsCamera = OwnerActor->FindComponentByClass<UAlsCameraComponent>())
+	if (bShouldControlRotation)
 	{
-		if (const UAnimInstance* AnimInstance = AlsCamera->GetAnimInstance())
+		Yaw = LookRotation.Yaw;
+	}
+
+	// Account for camera side offset to frame the target correctly.
+	if (bShouldControlRotation || !bAllowControlRotation)
+	{
+		if (const UAlsCameraComponent* AlsCamera = OwnerActor->FindComponentByClass<UAlsCameraComponent>())
 		{
-			const float SideOffset = AnimInstance->GetCurveValue(UAlsCameraConstants::CameraOffsetYCurveName());
-			if (!FMath::IsNearlyZero(SideOffset))
+			if (const UAnimInstance* AnimInstance = AlsCamera->GetAnimInstance())
 			{
-				const float DistanceToTarget = FVector::Dist(OwnerActor->GetActorLocation(), TargetLocation);
-				if (DistanceToTarget > KINDA_SMALL_NUMBER)
+				const float SideOffset = AnimInstance->GetCurveValue(UAlsCameraConstants::CameraOffsetYCurveName());
+				if (!FMath::IsNearlyZero(SideOffset))
 				{
-					// Calculate the angle needed to compensate for the side offset
-					// SideOffset = DistanceToTarget * sin(Angle)
-					// Angle = asin(SideOffset / DistanceToTarget)
-					const float OffsetAngleRadians = FMath::Asin(FMath::Clamp(SideOffset / DistanceToTarget, -1.0f, 1.0f));
-					Yaw -= FMath::RadiansToDegrees(OffsetAngleRadians);
+					const float DistanceToTarget = FVector::Dist(OwnerActor->GetActorLocation(), TargetLocation);
+					if (DistanceToTarget > KINDA_SMALL_NUMBER)
+					{
+						// Calculate the angle needed to compensate for the side offset
+						// SideOffset = DistanceToTarget * sin(Angle)
+						// Angle = asin(SideOffset / DistanceToTarget)
+						const float OffsetAngleRadians = FMath::Asin(FMath::Clamp(SideOffset / DistanceToTarget, -1.0f, 1.0f));
+						Yaw -= FMath::RadiansToDegrees(OffsetAngleRadians);
+					}
 				}
 			}
 		}

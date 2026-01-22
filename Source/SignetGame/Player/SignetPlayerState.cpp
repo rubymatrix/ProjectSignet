@@ -8,6 +8,11 @@
 #include "SignetGame/Util/Logging.h"
 #include "SignetGame/Inventory/SignetInventoryComponent.h"
 
+#include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
+#include "SignetGame/Abilities/Attributes/SignetSkillAttributeSet.h"
+#include "SignetGame/Abilities/TagCache.h"
+#include "SignetGame/Combat/SignetCombatStatics.h"
+
 void ASignetPlayerState::OnRep_IsLobbyHost()
 {
 }
@@ -60,6 +65,176 @@ void ASignetPlayerState::ReceivedPlayerProfile()
 	{
 		DebounceUpdate();
 		DebounceRecalculateStats();
+		InitializeSkillsFromSave();
+	}
+}
+
+void ASignetPlayerState::InitializeSkillsFromSave()
+{
+	if (!HasAuthority()) return;
+
+	const auto* GI = GetGameInstance();
+	if (!GI) return;
+
+	auto* SaveSubsystem = GI->GetSubsystem<USignetSaveSubsystem>();
+	if (!SaveSubsystem) return;
+
+	const auto* Save = SaveSubsystem->GetSave();
+	if (!Save) return;
+
+	const auto* Pawn = Cast<ASignetPlayerCharacter>(GetPawn());
+	if (!Pawn) return;
+
+	auto* Asc = Pawn->GetSignetAsc();
+	if (!Asc) return;
+
+	const auto* SkillSet = Asc->GetSet<USignetSkillAttributeSet>();
+	if (!SkillSet) return;
+
+	const auto& SkillTags = FTagCache::Get().Skill;
+
+	// Helper to map Tag to Attribute
+	auto GetSkillAttr = [&](const FGameplayTag& Tag) -> FGameplayAttribute
+	{
+		if (Tag == SkillTags.Sword) return USignetSkillAttributeSet::GetSwordAttribute();
+		if (Tag == SkillTags.GreatSword) return USignetSkillAttributeSet::GetGreatSwordAttribute();
+		if (Tag == SkillTags.Axe) return USignetSkillAttributeSet::GetAxeAttribute();
+		if (Tag == SkillTags.GreatAxe) return USignetSkillAttributeSet::GetGreatAxeAttribute();
+		if (Tag == SkillTags.Dagger) return USignetSkillAttributeSet::GetDaggerAttribute();
+		if (Tag == SkillTags.Club) return USignetSkillAttributeSet::GetClubAttribute();
+		if (Tag == SkillTags.Staff) return USignetSkillAttributeSet::GetStaffAttribute();
+		if (Tag == SkillTags.Polearm) return USignetSkillAttributeSet::GetPolearmAttribute();
+		if (Tag == SkillTags.Scythe) return USignetSkillAttributeSet::GetScytheAttribute();
+		if (Tag == SkillTags.Katana) return USignetSkillAttributeSet::GetKatanaAttribute();
+		if (Tag == SkillTags.GreatKatana) return USignetSkillAttributeSet::GetGreatKatanaAttribute();
+		if (Tag == SkillTags.H2H) return USignetSkillAttributeSet::GetHandToHandAttribute();
+		if (Tag == SkillTags.Archery) return USignetSkillAttributeSet::GetArcheryAttribute();
+		if (Tag == SkillTags.Marksmanship) return USignetSkillAttributeSet::GetMarksmanshipAttribute();
+		if (Tag == SkillTags.Throwing) return USignetSkillAttributeSet::GetThrowingAttribute();
+		if (Tag == SkillTags.Shield) return USignetSkillAttributeSet::GetShieldAttribute();
+		if (Tag == SkillTags.Singing) return USignetSkillAttributeSet::GetSingingAttribute();
+		if (Tag == SkillTags.StringInstrument) return USignetSkillAttributeSet::GetStringInstrumentAttribute();
+		if (Tag == SkillTags.WindInstrument) return USignetSkillAttributeSet::GetWindInstrumentAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Evasion"))) return USignetSkillAttributeSet::GetEvasionAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Parrying"))) return USignetSkillAttributeSet::GetParryingAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Guard"))) return USignetSkillAttributeSet::GetGuardAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Blue"))) return USignetSkillAttributeSet::GetBlueAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Dark"))) return USignetSkillAttributeSet::GetDarkAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Divine"))) return USignetSkillAttributeSet::GetDivineAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Elemental"))) return USignetSkillAttributeSet::GetElementalAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Enfeebling"))) return USignetSkillAttributeSet::GetEnfeeblingAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Enhancing"))) return USignetSkillAttributeSet::GetEnhancingAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Geomancy"))) return USignetSkillAttributeSet::GetGeomancyAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Handbell"))) return USignetSkillAttributeSet::GetHandbellAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Healing"))) return USignetSkillAttributeSet::GetHealingAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Summoning"))) return USignetSkillAttributeSet::GetSummoningAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Ninjutsu"))) return USignetSkillAttributeSet::GetNinjutsuAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Singing"))) return USignetSkillAttributeSet::GetSingingAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.StringInstrument"))) return USignetSkillAttributeSet::GetStringInstrumentAttribute();
+		if (Tag == FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.WindInstrument"))) return USignetSkillAttributeSet::GetWindInstrumentAttribute();
+		return FGameplayAttribute();
+	};
+
+	// For each skill in the save, set the base value in the AttributeSet
+	for (const auto& Kvp : Save->Skills)
+	{
+		FGameplayAttribute SkillAttr = GetSkillAttr(Kvp.Key);
+		if (SkillAttr.IsValid())
+		{
+			Asc->SetNumericAttributeBase(SkillAttr, Kvp.Value.Rank);
+		}
+	}
+
+	// Bind delegates for all skill attributes to save changes
+	TArray<FGameplayTag> AllSkillTags = {
+		SkillTags.Sword, SkillTags.GreatSword, SkillTags.Axe, SkillTags.GreatAxe,
+		SkillTags.Dagger, SkillTags.Club, SkillTags.Staff, SkillTags.Polearm,
+		SkillTags.Scythe, SkillTags.Katana, SkillTags.GreatKatana, SkillTags.H2H,
+		SkillTags.Archery, SkillTags.Marksmanship, SkillTags.Throwing, SkillTags.Shield,
+		SkillTags.Singing, SkillTags.StringInstrument, SkillTags.WindInstrument,
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Evasion")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Parrying")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Guard")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Blue")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Dark")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Divine")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Elemental")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Enfeebling")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Enhancing")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Geomancy")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Handbell")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Healing")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Summoning")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Ninjutsu")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Singing")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.StringInstrument")),
+		FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.WindInstrument"))
+	};
+
+	for (const FGameplayTag& Tag : AllSkillTags)
+	{
+		FGameplayAttribute Attr = GetSkillAttr(Tag);
+		if (Attr.IsValid())
+		{
+			Asc->GetGameplayAttributeValueChangeDelegate(Attr).AddUObject(this, &ASignetPlayerState::OnSkillAttributeChanged);
+		}
+	}
+}
+
+void ASignetPlayerState::OnSkillAttributeChanged(const FOnAttributeChangeData& Data)
+{
+	if (!HasAuthority()) return;
+
+	const auto* GI = GetGameInstance();
+	if (!GI) return;
+
+	auto* SaveSubsystem = GI->GetSubsystem<USignetSaveSubsystem>();
+	if (!SaveSubsystem) return;
+
+	// We need to find the Tag for this Attribute
+	const auto& SkillTags = FTagCache::Get().Skill;
+	FGameplayTag SkillTag;
+
+	if (Data.Attribute == USignetSkillAttributeSet::GetSwordAttribute()) SkillTag = SkillTags.Sword;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetGreatSwordAttribute()) SkillTag = SkillTags.GreatSword;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetAxeAttribute()) SkillTag = SkillTags.Axe;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetGreatAxeAttribute()) SkillTag = SkillTags.GreatAxe;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetDaggerAttribute()) SkillTag = SkillTags.Dagger;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetClubAttribute()) SkillTag = SkillTags.Club;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetStaffAttribute()) SkillTag = SkillTags.Staff;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetPolearmAttribute()) SkillTag = SkillTags.Polearm;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetScytheAttribute()) SkillTag = SkillTags.Scythe;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetKatanaAttribute()) SkillTag = SkillTags.Katana;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetGreatKatanaAttribute()) SkillTag = SkillTags.GreatKatana;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetHandToHandAttribute()) SkillTag = SkillTags.H2H;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetArcheryAttribute()) SkillTag = SkillTags.Archery;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetMarksmanshipAttribute()) SkillTag = SkillTags.Marksmanship;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetThrowingAttribute()) SkillTag = SkillTags.Throwing;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetShieldAttribute()) SkillTag = SkillTags.Shield;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetSingingAttribute()) SkillTag = SkillTags.Singing;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetStringInstrumentAttribute()) SkillTag = SkillTags.StringInstrument;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetWindInstrumentAttribute()) SkillTag = SkillTags.WindInstrument;
+	else if (Data.Attribute == USignetSkillAttributeSet::GetEvasionAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Evasion"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetParryingAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Parrying"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetGuardAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Guard"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetBlueAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Blue"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetDarkAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Dark"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetDivineAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Divine"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetElementalAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Elemental"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetEnfeeblingAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Enfeebling"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetEnhancingAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Enhancing"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetGeomancyAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Geomancy"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetHandbellAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Handbell"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetHealingAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Healing"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetSummoningAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Summoning"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetNinjutsuAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Ninjutsu"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetSingingAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.Singing"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetStringInstrumentAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.StringInstrument"));
+	else if (Data.Attribute == USignetSkillAttributeSet::GetWindInstrumentAttribute()) SkillTag = FGameplayTag::RequestGameplayTag(TEXT("Data.Skill.Magic.WindInstrument"));
+
+	if (SkillTag.IsValid())
+	{
+		SaveSubsystem->SetSkillRank(SkillTag, Data.NewValue);
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "SignetMobPawn.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "SignetGame/Abilities/SignetAbilitySystemComponent.h"
 #include "SignetGame/Player/Components/TargetableInterface.h"
 #include "SignetGame/Combat/CombatInterface.h"
 #include "SignetGame/Combat/Components/CombatTextComponent.h"
@@ -11,7 +12,7 @@
 #include "SignetGame/Data/AudioTypes.h"
 
 ASignetMobPawn::ASignetMobPawn(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<USignetAbilitySystemComponent>(TEXT("AbilitySystemComponent")))
 {
 	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent"));
 	if (CapsuleComponent)

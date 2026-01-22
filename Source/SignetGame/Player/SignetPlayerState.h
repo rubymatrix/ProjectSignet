@@ -74,6 +74,11 @@ public:
 
 	void ReceivedPlayerProfile();
 
+	/** Initializes persistent skill attributes from the save game. */
+	void InitializeSkillsFromSave();
+
+	void OnSkillAttributeChanged(const FOnAttributeChangeData& Data);
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsLobbyHost() const { return bIsHost; }
 

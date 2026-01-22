@@ -14,7 +14,7 @@
 #include "StateEffects/GE_State_Resting.h"
 #include "StateEffects/GE_State_Sitting.h"
 #include "StateEffects/GE_State_Stunned.h"
-#include "State/GA_Attack.h"
+#include "Actions/GA_Attack.h"
 
 USignetAbilitySystemComponent::USignetAbilitySystemComponent()
 {

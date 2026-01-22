@@ -26,6 +26,12 @@ void UCombatTextWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
+	if (bUseViewportCenter)
+	{
+		UpdateScreenPosition();
+		return;
+	}
+
 	if (InitialWorldPosition == FVector::ZeroVector)
 	{
 		CapturePosition();
@@ -39,7 +45,6 @@ void UCombatTextWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 void UCombatTextWidget::TriggerAnimation()
 {
 	if (!FCTAnimation) return;
-
 	PlayAnimation(FCTAnimation);
 }
 
@@ -66,11 +71,21 @@ void UCombatTextWidget::UpdateScreenPosition()
 	const auto Owner = GetOwningPlayer();
 	if (!Owner) return;
 
-	UGameplayStatics::ProjectWorldToScreen(Owner, InitialWorldPosition, ScreenPosition, true);
+	if (bUseViewportCenter)
+	{
+		int32 SizeX = 0;
+		int32 SizeY = 0;
+		Owner->GetViewportSize(SizeX, SizeY);
+		ScreenPosition = FVector2D(static_cast<float>(SizeX) * 0.5f, static_cast<float>(SizeY) * 0.5f);
+	}
+	else
+	{
+		UGameplayStatics::ProjectWorldToScreen(Owner, InitialWorldPosition, ScreenPosition, true);
+	}
 
 	if (const auto CanvasSlot = Cast<UCanvasPanelSlot>(TextBlock->Slot))
 	{
-		CanvasSlot->SetPosition(ScreenPosition);
+		CanvasSlot->SetPosition(ScreenPosition + ScreenOffset);
 	}
 }
 
@@ -90,6 +105,13 @@ UCombatTextWidget* UCombatTextWidget::CreateCombatText(APlayerController* Owning
 	if (CombatTextWidget)
 	{
 		CombatTextWidget->TargetActor = InTargetActor;
+		CombatTextWidget->ScreenOffset = InData.ScreenOffset;
+		CombatTextWidget->CombatTextType = InData.CombatTextType;
+
+		if (const APawn* Pawn = Cast<APawn>(InTargetActor))
+		{
+			CombatTextWidget->bUseViewportCenter = Pawn->IsLocallyControlled();
+		}
 		if (CombatTextWidget->TextBlock)
 		{
 			CombatTextWidget->TextBlock->SetText(InData.Text);

@@ -88,3 +88,5 @@ Agents.md
 *.code-workspace
 WebGL_Zone_Render*
 .claude/
+
+server-base/

@@ -47,6 +47,12 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Animation")
 	float OrientationWarpAngle = 0.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Animation")
+	bool bLookAtEnabled = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State|Animation")
+	FVector LookAtLocation = FVector::ZeroVector;
 	
 // Begin Animation Setting References
 	

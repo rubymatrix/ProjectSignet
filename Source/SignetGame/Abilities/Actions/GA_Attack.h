@@ -43,6 +43,9 @@ private:
 
 	TArray<FAttackResult> CalculateAttackResults(AActor* Target);
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<UGameplayEffect> DamageEffectClass;
+
 	UPROPERTY()
 	TArray<UAnimMontage*> AttackMontages;
 

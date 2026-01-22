@@ -38,6 +38,11 @@ public:
 	FSignetPlayerProfile& GetPlayerProfile();
 	FSignetCurrencyWallet& GetWallet();
 	FSignetJobProgress* GetOrAddJob(EJob Job);
+	
+	FSignetSkillProgress* GetOrAddSkill(const FGameplayTag& SkillTag);
+	float GetSkillRank(const FGameplayTag& SkillTag) const;
+	void SetSkillRank(const FGameplayTag& SkillTag, float Rank, bool bAutosave = true);
+
 	int GetSkillTier(EJob Job, FName NodeId) const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Profile")

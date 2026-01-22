@@ -6,6 +6,7 @@
 #include "AlsCharacter.h"
 #include "InputActionValue.h"
 #include "VisualState.h"
+#include "GameplayEffectTypes.h"
 #include "SignetGame/Combat/CombatInterface.h"
 #include "SignetGame/Combat/CombatTypes.h"
 #include "SignetGame/Data/CharacterParts.h"
@@ -15,6 +16,7 @@
 class UCameraShakeComponent;
 class UCharacterAudioComponent;
 class UCharacterDataComponent;
+class UCombatTextComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisualStateUpdated, const FVisualState&, InVisualState);
 
 class USignetVisualComponent;
@@ -87,6 +89,8 @@ protected:
 	TObjectPtr<UCharacterAudioComponent> CharacterAudio;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
 	TObjectPtr<UCameraShakeComponent> CameraShakeComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(HideInDetailPanel=true), Category="Components")
+	TObjectPtr<UCombatTextComponent> CombatTextComp;
 
 public:
 
@@ -301,6 +305,7 @@ public:
 
 
 	//~ Begin ICombatInterface
+	virtual FString GetEntityName() override;
 	virtual float GetHealth() override;
 	virtual float GetMaxHealth() override;
 	virtual float GetPower() override;
@@ -335,8 +340,16 @@ private:
 	void ApplyFace(const FCharacterPartsRow* Parts, const EFaceClipStage DesiredClipStage = EFaceClipStage::None);
 	void ApplyMeshHiding();
 
+	void ApplyItemStatModifiers(const FInventoryItem& ItemDef, const FGuid& InstanceId);
+	void RemoveItemStatModifiers(const FGuid& InstanceId);
 
 	UFUNCTION()
 	void OnEquipmentChanged(EGearSlot InGearSlot, int32 OldItemID, int32 NewItemID);
+
+	UFUNCTION()
+	void OnEquipmentChangedInstance(EGearSlot InGearSlot, FGuid OldInstance, FGuid NewInstance);
+
+	UPROPERTY(Transient)
+	TMap<FGuid, FActiveGameplayEffectHandle> ItemStatEffectHandles;
 };
 

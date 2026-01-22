@@ -28,6 +28,8 @@ class ICombatInterface
 public:
 
 	UFUNCTION(BlueprintCallable)
+	virtual FString GetEntityName() { return FString(); }
+	UFUNCTION(BlueprintCallable)
 	virtual float GetHealth() { return 0.0f; }
 	UFUNCTION(BlueprintCallable)
 	virtual float GetMaxHealth() { return 0.0f; }

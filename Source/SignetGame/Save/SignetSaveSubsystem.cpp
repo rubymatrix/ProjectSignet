@@ -1,6 +1,7 @@
 ﻿// Source/SignetGame/Private/Save/SignetSaveSubsystem.cpp
 
 #include "SignetSaveSubsystem.h"
+#include "GameplayTagContainer.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/DateTime.h"
 #include "Misc/Paths.h"
@@ -349,6 +350,39 @@ FSignetJobProgress* USignetSaveSubsystem::GetOrAddJob(EJob Job)
 		return &NewRef;
 	}
 	return Found;
+}
+
+FSignetSkillProgress* USignetSaveSubsystem::GetOrAddSkill(const FGameplayTag& SkillTag)
+{
+	check(CurrentSave);
+	FSignetSkillProgress* Found = CurrentSave->Skills.Find(SkillTag);
+	if (!Found)
+	{
+		FSignetSkillProgress& NewRef = CurrentSave->Skills.Add(SkillTag);
+		NewRef.SkillTag = SkillTag;
+		return &NewRef;
+	}
+	return Found;
+}
+
+float USignetSaveSubsystem::GetSkillRank(const FGameplayTag& SkillTag) const
+{
+	if (!CurrentSave) return 0.0f;
+	if (const FSignetSkillProgress* P = CurrentSave->Skills.Find(SkillTag))
+	{
+		return P->Rank;
+	}
+	return 0.0f;
+}
+
+void USignetSaveSubsystem::SetSkillRank(const FGameplayTag& SkillTag, float Rank, bool bAutosave)
+{
+	if (FSignetSkillProgress* P = GetOrAddSkill(SkillTag))
+	{
+		P->Rank = Rank;
+		MarkDirty();
+		if (bAutosave) ScheduleAutosave();
+	}
 }
 
 void USignetSaveSubsystem::AddCurrency(ECurrencyType Type, int64 Delta, bool bAutosave)

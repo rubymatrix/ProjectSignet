@@ -73,6 +73,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Signet|ItemTable|Assets")
 	void SetMeshFromAsset(UObject* InAsset, const FString& PrefixToRemove);
 
+	// Reads server-base/sql/item_mods.sql and applies modifiers for the given ItemID.
+	UFUNCTION(BlueprintCallable, Category="Signet|ItemTable|Mods")
+	bool ImportItemModsFromSql(int32 ItemID, bool bOverwriteExisting = true, bool bCommit = true);
+
 protected:
 
 	/** Utility: build one entry from a row */
@@ -80,6 +84,9 @@ protected:
 
 	/** Utility: tries to get a typed row from the table */
 	bool TryGetItemRow(const FName& RowName, FItemRow& OutRow) const;
+
+	/** Utility: find a row name by ItemID */
+	bool TryFindRowNameByItemID(int32 ItemID, FName& OutRowName) const;
 
 	/** Utility: trim path */
 	FString MakeTrimmedPath(UObject* Asset, const FString& PrefixToRemove) const;
